@@ -15,6 +15,10 @@ import (
 	"github.com/moonwalker/moonbase/pkg/jwt"
 )
 
+const (
+	GH_TOKEN_COOKIE = "gh_token"
+)
+
 var (
 	ghScopes         = []string{"user:email", "read:org"}
 	oauthStateString = xid.New().String()
@@ -76,7 +80,7 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{Name: "gh_token", Value: et, Path: "/"})
+	http.SetCookie(w, &http.Cookie{Name: GH_TOKEN_COOKIE, Value: et, Path: "/"})
 	json.NewEncoder(w).Encode(User{
 		Login: ghUser.Login,
 		Name:  ghUser.Name,
@@ -93,11 +97,4 @@ func encryptAccessToken(user *github.User, accessToken string) (string, error) {
 	}
 
 	return te, nil
-}
-
-func returnWithError(w http.ResponseWriter, code int, msg string, err error) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(http.StatusInternalServerError)
-	json.NewEncoder(w).Encode(Error{code, msg, err.Error()})
 }

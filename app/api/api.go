@@ -47,6 +47,8 @@ func Routes() chi.Router {
 	return r
 }
 
+const USER_CTX_KEY = "gh-user"
+
 func withUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var tokenString string
@@ -74,7 +76,7 @@ func withUser(next http.Handler) http.Handler {
 		}
 
 		// add auth claims to context
-		ctx := context.WithValue(r.Context(), jwt.AUTH_CLAIMS_KEY, token.Claims)
+		ctx := context.WithValue(r.Context(), USER_CTX_KEY, ghUser)
 
 		// authenticated, pass it through
 		next.ServeHTTP(w, r.WithContext(ctx))

@@ -10,8 +10,6 @@ import (
 	"github.com/moonwalker/moonbase/pkg/jwe"
 )
 
-const AUTH_CLAIMS_KEY = "auth-claims"
-
 type authClaims struct {
 	jwt.StandardClaims
 	Data []byte `json:"data"`
