@@ -19,10 +19,6 @@ import (
 // @version 1.0
 
 // @BasePath /
-
-// @securityDefinitions.apikey JWT Token
-// @in header
-// @name Authorization
 func Routes() chi.Router {
 	r := chi.NewRouter()
 
