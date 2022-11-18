@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/moonwalker/moonbase/app/api"
+	"github.com/moonwalker/moonbase/app/pages"
 )
 
 type Options struct {
@@ -23,6 +24,7 @@ func NewServer(options *Options) *Server {
 func (s *Server) Listen() error {
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("/", pages.Index)
 	mux.HandleFunc("/debug", api.Debug)
 	// ...
 
