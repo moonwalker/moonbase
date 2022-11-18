@@ -34,6 +34,11 @@ var (
 	oauthStateString = xid.New().String()
 )
 
+func setAuthConfig() {
+	githubConfig.ClientID = env.GithubClientID
+	githubConfig.ClientSecret = env.GithubClientSecret
+}
+
 func githubAuth(w http.ResponseWriter, r *http.Request) {
 	url := githubConfig.AuthCodeURL(oauthStateString, oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
