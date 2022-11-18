@@ -1,7 +1,8 @@
 package cli
 
 import (
-	"github.com/joho/godotenv"
+	"github.com/moonwalker/moonbase/pkg/env"
+
 	"github.com/spf13/cobra"
 )
 
@@ -13,11 +14,7 @@ var RootCmd = &cobra.Command{
 }
 
 func init() {
-	// .env (default)
-	godotenv.Load()
-
-	// .env.local # local user specific (git ignored)
-	godotenv.Overload(".env.local")
+	env.Load()
 }
 
 func Run() error {

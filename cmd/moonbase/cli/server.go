@@ -2,16 +2,17 @@ package cli
 
 import (
 	"os"
-	"strconv"
 
 	"github.com/spf13/cobra"
 
 	"github.com/moonwalker/moonbase/app"
+	"github.com/moonwalker/moonbase/pkg/env"
 )
 
 var (
-	defaultPort = 8080
-	port        int
+	port    int
+	JWT_KEY = []byte(os.Getenv("JWT_KEY"))
+	JWE_KEY = []byte(os.Getenv("JWE_KEY"))
 )
 
 var serverCmd = &cobra.Command{
@@ -22,11 +23,7 @@ var serverCmd = &cobra.Command{
 }
 
 func init() {
-	p, err := strconv.Atoi(os.Getenv("PORT"))
-	if err == nil {
-		defaultPort = p
-	}
-	serverCmd.PersistentFlags().IntVarP(&port, "port", "p", defaultPort, "HTTP port")
+	serverCmd.PersistentFlags().IntVarP(&port, "port", "p", env.Int("PORT", 8080), "HTTP port")
 	RootCmd.AddCommand(serverCmd)
 	RootCmd.RunE = serverCmdF
 }
