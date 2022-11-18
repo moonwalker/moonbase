@@ -17,8 +17,13 @@ import (
 
 // @title Moonbase API
 // @version 1.0
+// @description Git-based headless CMS API.
 
-// @BasePath /
+// @license.name MIT
+// @license.url https://github.com/moonwalker/moonbase/blob/main/LICENSE
+
+// @host moonbase.mw.zone
+// @BasePath /api
 func Routes() chi.Router {
 	r := chi.NewRouter()
 

@@ -1,10 +1,16 @@
 {
     "swagger": "2.0",
     "info": {
+        "description": "Git-based headless CMS API.",
         "title": "Moonbase API",
         "contact": {},
+        "license": {
+            "name": "MIT",
+            "url": "https://github.com/moonwalker/moonbase/blob/main/LICENSE"
+        },
         "version": "1.0"
     },
-    "basePath": "/",
+    "host": "moonbase.mw.zone",
+    "basePath": "/api",
     "paths": {}
 }

@@ -1,6 +1,11 @@
-basePath: /
+basePath: /api
+host: moonbase.mw.zone
 info:
   contact: {}
+  description: Git-based headless CMS API.
+  license:
+    name: MIT
+    url: https://github.com/moonwalker/moonbase/blob/main/LICENSE
   title: Moonbase API
   version: "1.0"
 paths: {}
