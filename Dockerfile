@@ -10,4 +10,5 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o moonbase ./cmd/moonbase
 FROM cgr.dev/chainguard/alpine-base
 RUN apk --no-cache add ca-certificates
 COPY --from=build /work/moonbase /usr/local/bin
+EXPOSE 8080
 CMD ["moonbase"]
