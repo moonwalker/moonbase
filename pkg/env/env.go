@@ -7,6 +7,13 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// env keys
+const (
+	PORT    = "PORT"
+	JWT_KEY = "JWT_KEY"
+	JWE_KEY = "JWE_KEY"
+)
+
 func Load() {
 	// .env (default)
 	godotenv.Load()
@@ -15,7 +22,21 @@ func Load() {
 	godotenv.Overload(".env.local")
 }
 
-func Getenv(key string, def string) string {
+func Port(def int) int {
+	return getint(PORT, def)
+}
+
+func JwtKey() string {
+	return get(JWT_KEY, "")
+}
+
+func JweKey() string {
+	return get(JWE_KEY, "")
+}
+
+// private functions
+
+func get(key string, def string) string {
 	s := os.Getenv(key)
 	if len(s) == 0 {
 		return def // return default
@@ -23,7 +44,7 @@ func Getenv(key string, def string) string {
 	return s
 }
 
-func Int(key string, def int) int {
+func getint(key string, def int) int {
 	i, err := strconv.Atoi(os.Getenv(key))
 	if err != nil {
 		return def
