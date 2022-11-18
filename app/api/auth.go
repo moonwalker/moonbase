@@ -16,15 +16,14 @@ import (
 )
 
 type TokenData struct {
-	Name        string `json:"name"`
-	Email       string `json:"email"`
+	Login       string `json:"login"`
 	AccessToken string `json:"accessToken"`
 }
 
 type User struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
-	Token string `json:"token"`
+	Image string `json:"image"`
 }
 
 var (
@@ -62,21 +61,33 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	et, err := encryptAccessToken(ghUser)
+	et, err := encryptAccessToken(ghUser, token.AccessToken)
 	if err != nil {
 		httpError(w, -1, "failed to encrypt token", err)
 		return
 	}
 
-	json.NewEncoder(w).Encode(User{Name: *ghUser.Name, Email: *ghUser.Email, Token: et})
+	http.SetCookie(w, &http.Cookie{Name: "gh_token", Value: et, Path: "/"})
+	json.NewEncoder(w).Encode(User{
+		Name:  *ghUser.Name,
+		Email: *ghUser.Email,
+		Image: *ghUser.AvatarURL,
+	})
 }
 
-func encryptAccessToken(user *github.User) (string, error) {
-	payload := &TokenData{Name: *user.Name, Email: *user.Email}
-	te, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, payload, 1)
+func encryptAccessToken(user *github.User, accessToken string) (string, error) {
+	payload := &TokenData{Login: *user.Login, AccessToken: accessToken}
+	te, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, payload, 30)
 	if err != nil {
 		return "", err
 	}
 
 	return te, nil
+}
+
+func returnWithError(w http.ResponseWriter, code int, msg string, err error) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(http.StatusInternalServerError)
+	json.NewEncoder(w).Encode(Error{code, msg, err.Error()})
 }
