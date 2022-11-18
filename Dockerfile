@@ -3,6 +3,7 @@ WORKDIR /work
 COPY go.mod go.sum ./
 COPY app ./app
 COPY cmd ./cmd
+COPY docs ./docs
 COPY pkg ./pkg
 COPY vendor ./vendor
 RUN CGO_ENABLED=0 GOOS=linux go build -o moonbase ./cmd/moonbase
