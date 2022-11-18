@@ -1,0 +1,57 @@
+# flyctl launch added from .gitignore
+**/.DS_Store
+**/.env.local
+
+# flyctl launch added from vendor/github.com/dgrijalva/jwt-go/.gitignore
+vendor/github.com/dgrijalva/jwt-go/**/.DS_Store
+vendor/github.com/dgrijalva/jwt-go/**/bin
+
+
+
+# flyctl launch added from vendor/github.com/joho/godotenv/.gitignore
+vendor/github.com/joho/godotenv/**/.DS_Store
+
+# flyctl launch added from vendor/github.com/spf13/cobra/.gitignore
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+vendor/github.com/spf13/cobra/**/*.o
+vendor/github.com/spf13/cobra/**/*.a
+vendor/github.com/spf13/cobra/**/*.so
+
+# Folders
+vendor/github.com/spf13/cobra/**/_obj
+vendor/github.com/spf13/cobra/**/_test
+
+# Architecture specific extensions/prefixes
+vendor/github.com/spf13/cobra/**/*.[568vq]
+vendor/github.com/spf13/cobra/**/[568vq].out
+
+vendor/github.com/spf13/cobra/**/*.cgo1.go
+vendor/github.com/spf13/cobra/**/*.cgo2.c
+vendor/github.com/spf13/cobra/**/_cgo_defun.c
+vendor/github.com/spf13/cobra/**/_cgo_gotypes.go
+vendor/github.com/spf13/cobra/**/_cgo_export.*
+
+vendor/github.com/spf13/cobra/**/_testmain.go
+
+# Vim files https://github.com/github/gitignore/blob/master/Global/Vim.gitignore
+# swap
+vendor/github.com/spf13/cobra/**/[._]*.s[a-w][a-z]
+vendor/github.com/spf13/cobra/**/[._]s[a-w][a-z]
+# session
+vendor/github.com/spf13/cobra/**/Session.vim
+# temporary
+vendor/github.com/spf13/cobra/**/.netrwhist
+vendor/github.com/spf13/cobra/**/*~
+# auto-generated tag files
+vendor/github.com/spf13/cobra/**/tags
+
+vendor/github.com/spf13/cobra/**/*.exe
+vendor/github.com/spf13/cobra/**/cobra.test
+vendor/github.com/spf13/cobra/**/bin
+
+vendor/github.com/spf13/cobra/**/.idea
+vendor/github.com/spf13/cobra/**/*.iml
+
+# flyctl launch added from vendor/github.com/spf13/pflag/.gitignore
+vendor/github.com/spf13/pflag/**/.idea/*
+
