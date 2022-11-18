@@ -29,7 +29,6 @@ func Routes() chi.Router {
 
 	r.Get("/debug", Debug)
 
-	setAuthConfig() // TODO: find a better way
 	// Login route
 	r.HandleFunc("/login/github", githubAuth)
 

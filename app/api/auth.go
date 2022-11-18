@@ -27,24 +27,27 @@ type User struct {
 }
 
 var (
-	githubConfig = &oauth2.Config{
-		Scopes:   []string{"user:email", "read:org"},
-		Endpoint: githuboauth.Endpoint,
-	}
+	Scopes           = []string{"user:email", "read:org"}
 	oauthStateString = xid.New().String()
 )
 
-func setAuthConfig() {
-	githubConfig.ClientID = env.GithubClientID
-	githubConfig.ClientSecret = env.GithubClientSecret
+func githubConfig() *oauth2.Config {
+	return &oauth2.Config{
+		Scopes:       []string{"user:email", "read:org"},
+		Endpoint:     githuboauth.Endpoint,
+		ClientID:     env.GithubClientID,
+		ClientSecret: env.GithubClientSecret,
+	}
 }
 
 func githubAuth(w http.ResponseWriter, r *http.Request) {
-	url := githubConfig.AuthCodeURL(oauthStateString, oauth2.AccessTypeOnline)
+	url := githubConfig().AuthCodeURL(oauthStateString, oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
 func githubCallback(w http.ResponseWriter, r *http.Request) {
+	githubConfig := githubConfig()
+
 	state := r.FormValue("state")
 	if state != oauthStateString {
 		httpError(w, -1, "invalid oauth state", fmt.Errorf("expected: %s, actual: %s", oauthStateString, state))
