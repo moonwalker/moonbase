@@ -1,0 +1,12 @@
+basePath: /
+info:
+  contact: {}
+  title: Moonbase API
+  version: "1.0"
+paths: {}
+securityDefinitions:
+  JWT Token:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
