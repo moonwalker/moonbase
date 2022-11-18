@@ -24,7 +24,7 @@ func NewServer(options *Options) *Server {
 func (s *Server) Listen() error {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/", pages.Index)
+	pages.Handler(mux)
 	mux.HandleFunc("/debug", api.Debug)
 	// ...
 
