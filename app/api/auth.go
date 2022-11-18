@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/google/go-github/v48/github"
 	"github.com/rs/xid"
@@ -35,9 +36,13 @@ window.onload = function() {
 </body
 </html>`
 
+const (
+	oauthStateSeparator = "|"
+)
+
 var (
 	ghScopes         = []string{"user:email", "read:org"}
-	oauthStateString = xid.New().String()
+	oauthStateSecret = xid.New().String()
 )
 
 type TokenData struct {
@@ -62,7 +67,8 @@ func githubConfig() *oauth2.Config {
 }
 
 func githubAuth(w http.ResponseWriter, r *http.Request) {
-	url := githubConfig().AuthCodeURL(oauthStateString, oauth2.AccessTypeOnline)
+	state := fmt.Sprintf("%s%s%s", oauthStateSecret, oauthStateSeparator, r.Referer())
+	url := githubConfig().AuthCodeURL(state, oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
@@ -70,10 +76,15 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 	githubConfig := githubConfig()
 
 	state := r.FormValue("state")
-	if state != oauthStateString {
-		httpError(w, -1, "invalid oauth state", fmt.Errorf("expected: %s, actual: %s", oauthStateString, state))
+	s := strings.Split(state, oauthStateSeparator)
+	secret, referer := s[0], s[1]
+
+	if secret != oauthStateSecret {
+		httpError(w, -1, "invalid oauth state secret", fmt.Errorf("expected: %s, actual: %s", oauthStateSecret, secret))
 		return
 	}
+
+	println(referer)
 
 	code := r.FormValue("code")
 	token, err := githubConfig.Exchange(oauth2.NoContext, code)
