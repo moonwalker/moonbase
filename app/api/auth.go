@@ -67,7 +67,11 @@ func githubConfig() *oauth2.Config {
 }
 
 func githubAuth(w http.ResponseWriter, r *http.Request) {
-	state := fmt.Sprintf("%s%s%s", oauthStateSecret, oauthStateSeparator, r.Referer())
+	returnURL := r.FormValue("returnURL")
+	if returnURL == "" {
+		returnURL = r.Referer()
+	}
+	state := fmt.Sprintf("%s%s%s", oauthStateSecret, oauthStateSeparator, returnURL)
 	url := githubConfig().AuthCodeURL(state, oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
@@ -77,14 +81,12 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 
 	state := r.FormValue("state")
 	s := strings.Split(state, oauthStateSeparator)
-	secret, referer := s[0], s[1]
+	secret, returnURL := s[0], s[1]
 
 	if secret != oauthStateSecret {
 		httpError(w, -1, "invalid oauth state secret", fmt.Errorf("expected: %s, actual: %s", oauthStateSecret, secret))
 		return
 	}
-
-	println(referer)
 
 	code := r.FormValue("code")
 	token, err := githubConfig.Exchange(oauth2.NoContext, code)
@@ -92,6 +94,8 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 		httpError(w, -1, "oauth exchange failed", err)
 		return
 	}
+
+	fmt.Printf("%s?code=%s", returnURL, code)
 
 	oauthClient := githubConfig.Client(oauth2.NoContext, token)
 	ghClient := github.NewClient(oauthClient)
