@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,6 +15,25 @@ import (
 	"github.com/moonwalker/moonbase/pkg/env"
 	"github.com/moonwalker/moonbase/pkg/jwt"
 )
+
+const respHtml = `
+<html>
+<head>
+<head/>
+<body>
+<script>
+window.onload = function() {
+	var token, user;
+	var match = document.cookie.match(new RegExp('(^| )gh_token=([^;]+)'));
+  	if (match) token = match[2];
+	match = document.cookie.match(new RegExp('(^| )artms_user=([^;]+)'));
+  	if (match) user = match[2];
+	window.opener.postMessage({ gh_token: token, artms_user: user }, '*');
+	window.close();
+};
+</script>
+</body
+</html>`
 
 var (
 	ghScopes         = []string{"user:email", "read:org"}
@@ -77,12 +97,23 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &http.Cookie{Name: "gh_token", Value: et, Path: "/"})
-	json.NewEncoder(w).Encode(User{
+	// json.NewEncoder(w).Encode(User{
+	// 	Login: ghUser.Login,
+	// 	Name:  ghUser.Name,
+	// 	Email: ghUser.Email,
+	// 	Image: ghUser.AvatarURL,
+	// })
+
+	u, _ := json.Marshal(User{
 		Login: ghUser.Login,
 		Name:  ghUser.Name,
 		Email: ghUser.Email,
 		Image: ghUser.AvatarURL,
 	})
+	http.SetCookie(w, &http.Cookie{Name: "artms_user", Value: base64.StdEncoding.EncodeToString(u), Path: "/"})
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	fmt.Fprint(w, respHtml)
 }
 
 func encryptAccessToken(user *github.User, accessToken string) (string, error) {
