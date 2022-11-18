@@ -23,7 +23,7 @@ processes = []
     type = "connections"
 
   [[services.ports]]
-    force_https = true
+    force_https = false # set to `true`, if you are not running behind CloudFlare or similar proxy
     handlers = ["http"]
     port = 80
 
