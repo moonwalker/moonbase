@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/google/go-github/v48/github"
+	"github.com/moonwalker/moonbase/pkg/env"
 	"github.com/moonwalker/moonbase/pkg/jwt"
 	"golang.org/x/oauth2"
 )
@@ -56,7 +57,7 @@ func redirectWithError(w http.ResponseWriter, r *http.Request, url string, msg s
 
 func encryptAccessToken(user *github.User) (string, error) {
 	payload := &TokenData{Name: *user.Name, Email: *user.Email}
-	te, err := jwt.EncryptAndSign(encKey, sigKey, payload, 1)
+	te, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, payload, 1)
 	if err != nil {
 		return "", err
 	}
