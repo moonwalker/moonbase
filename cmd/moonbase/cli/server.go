@@ -1,13 +1,17 @@
 package cli
 
 import (
+	"os"
+	"strconv"
+
 	"github.com/spf13/cobra"
 
 	"github.com/moonwalker/moonbase/app"
 )
 
 var (
-	port int
+	defaultPort = 8080
+	port        int
 )
 
 var serverCmd = &cobra.Command{
@@ -18,7 +22,11 @@ var serverCmd = &cobra.Command{
 }
 
 func init() {
-	serverCmd.PersistentFlags().IntVarP(&port, "port", "p", 8080, "HTTP port")
+	p, err := strconv.Atoi(os.Getenv("PORT"))
+	if err == nil {
+		defaultPort = p
+	}
+	serverCmd.PersistentFlags().IntVarP(&port, "port", "p", defaultPort, "HTTP port")
 	RootCmd.AddCommand(serverCmd)
 	RootCmd.RunE = serverCmdF
 }
