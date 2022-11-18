@@ -8,8 +8,10 @@ import (
 )
 
 var (
-	JwtKey string
-	JweKey string
+	JwtKey             string
+	JweKey             string
+	GithubClientID     string
+	GithubClientSecret string
 )
 
 func Load() {
@@ -22,6 +24,8 @@ func Load() {
 	// set vars
 	JwtKey = os.Getenv("JWT_KEY")
 	JweKey = os.Getenv("JWE_KEY")
+	GithubClientID = os.Getenv("GITHUB_CLIENT_ID")
+	GithubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")
 }
 
 func Port(def int) int {
