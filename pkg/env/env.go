@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	JwtKey             string
-	JweKey             string
+	JwtKey             []byte
+	JweKey             []byte
 	GithubClientID     string
 	GithubClientSecret string
 )
@@ -22,8 +22,8 @@ func Load() {
 	godotenv.Overload(".env.local")
 
 	// set vars
-	JwtKey = os.Getenv("JWT_KEY")
-	JweKey = os.Getenv("JWE_KEY")
+	JwtKey = []byte(os.Getenv("JWT_KEY"))
+	JweKey = []byte(os.Getenv("JWE_KEY"))
 	GithubClientID = os.Getenv("GITHUB_CLIENT_ID")
 	GithubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")
 }
