@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,6 +12,12 @@ import (
 	"golang.org/x/oauth2"
 )
 
+type Error struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Error   string `json:"error"`
+}
+
 func githubAuth(w http.ResponseWriter, r *http.Request) {
 	url := githubConfig.AuthCodeURL(oauthStateString, oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
@@ -21,14 +26,14 @@ func githubAuth(w http.ResponseWriter, r *http.Request) {
 func githubCallback(w http.ResponseWriter, r *http.Request) {
 	state := r.FormValue("state")
 	if state != oauthStateString {
-		redirectWithError(w, r, "/", "invalid oauth state", fmt.Errorf("expected: %s, actual: %s", oauthStateString, state))
+		returnWithError(w, -1, "invalid oauth state", fmt.Errorf("expected: %s, actual: %s", oauthStateString, state))
 		return
 	}
 
 	code := r.FormValue("code")
 	token, err := githubConfig.Exchange(oauth2.NoContext, code)
 	if err != nil {
-		redirectWithError(w, r, "/", "oauth exchange failed", err)
+		returnWithError(w, -1, "oauth exchange failed", err)
 		return
 	}
 
@@ -36,23 +41,24 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 	ghClient := github.NewClient(oauthClient)
 	ghUser, _, err := ghClient.Users.Get(context.Background(), "")
 	if err != nil {
-		redirectWithError(w, r, "/", "github client failed to get user", err)
+		returnWithError(w, -1, "github client failed to get user", err)
 		return
 	}
 
 	et, err := encryptAccessToken(ghUser)
 	if err != nil {
-		redirectWithError(w, r, "/", "failed to encrypt token", err)
+		returnWithError(w, -1, "failed to encrypt token", err)
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{Name: "gh_token", Value: et, Path: "/"})
-	json.NewEncoder(w).Encode(User{Name: *ghUser.Name, Email: *ghUser.Email})
+	json.NewEncoder(w).Encode(User{Name: *ghUser.Name, Email: *ghUser.Email, Token: et})
 }
 
-func redirectWithError(w http.ResponseWriter, r *http.Request, url string, msg string, err error) {
-	http.SetCookie(w, &http.Cookie{Name: "FLASH_ERROR", Value: base64.URLEncoding.EncodeToString([]byte(msg)), Path: url})
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+func returnWithError(w http.ResponseWriter, code int, msg string, err error) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(http.StatusInternalServerError)
+	json.NewEncoder(w).Encode(Error{code, msg, err.Error()})
 }
 
 func encryptAccessToken(user *github.User) (string, error) {
