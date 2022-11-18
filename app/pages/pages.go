@@ -22,7 +22,7 @@ func Handler() chi.Router {
 	fs := http.FileServer(http.FS(assets))
 
 	r.HandleFunc("/", index)
-	r.Handle("/assets/", http.StripPrefix("/assets/", fs))
+	r.Handle("/assets/*", http.StripPrefix("/assets/", fs))
 
 	return r
 }
