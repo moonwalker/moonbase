@@ -15,25 +15,26 @@ import (
 	"github.com/moonwalker/moonbase/pkg/jwt"
 )
 
+var (
+	ghScopes         = []string{"user:email", "read:org"}
+	oauthStateString = xid.New().String()
+)
+
 type TokenData struct {
 	Login       string `json:"login"`
 	AccessToken string `json:"accessToken"`
 }
 
 type User struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Image string `json:"image"`
+	Login *string `json:"login,omitempty"`
+	Name  *string `json:"name,omitempty"`
+	Email *string `json:"email,omitempty"`
+	Image *string `json:"image,omitempty"`
 }
-
-var (
-	Scopes           = []string{"user:email", "read:org"}
-	oauthStateString = xid.New().String()
-)
 
 func githubConfig() *oauth2.Config {
 	return &oauth2.Config{
-		Scopes:       []string{"user:email", "read:org"},
+		Scopes:       ghScopes,
 		Endpoint:     githuboauth.Endpoint,
 		ClientID:     env.GithubClientID,
 		ClientSecret: env.GithubClientSecret,
@@ -77,9 +78,10 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, &http.Cookie{Name: "gh_token", Value: et, Path: "/"})
 	json.NewEncoder(w).Encode(User{
-		Name:  *ghUser.Name,
-		Email: *ghUser.Email,
-		Image: *ghUser.AvatarURL,
+		Login: ghUser.Login,
+		Name:  ghUser.Name,
+		Email: ghUser.Email,
+		Image: ghUser.AvatarURL,
 	})
 }
 
