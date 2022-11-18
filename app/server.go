@@ -57,7 +57,7 @@ func (s *Server) Listen() error {
 	pages.Handler(mux)
 
 	// Login route
-	mux.HandleFunc("/login/github/", githubAuth)
+	mux.HandleFunc("/login/github", githubAuth)
 
 	// Github callback
 	mux.HandleFunc("/login/github/callback", githubCallback)
