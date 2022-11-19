@@ -14,7 +14,7 @@ var (
 	GithubClientSecret string
 )
 
-func Load() {
+func init() {
 	// .env (default)
 	godotenv.Load()
 

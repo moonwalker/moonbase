@@ -9,9 +9,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/google/go-github/v48/github"
-	httpSwagger "github.com/swaggo/http-swagger"
 
-	_ "github.com/moonwalker/moonbase/docs"
 	"github.com/moonwalker/moonbase/pkg/env"
 	"github.com/moonwalker/moonbase/pkg/jwt"
 )
@@ -24,26 +22,27 @@ import (
 // @license.url https://github.com/moonwalker/moonbase/blob/main/LICENSE
 
 // @host moonbase.mw.zone
-// @BasePath /api
+// @BasePath /
 func Routes() chi.Router {
 	r := chi.NewRouter()
 
-	r.Get("/debug", Debug)
+	// index, 404, etc. (supports html and json)
+	r.Mount("/", core())
 
-	// Login route
+	// swagger docs
+	r.Mount("/docs", docs())
+
+	// github login
 	r.HandleFunc("/login/github", githubAuth)
 
-	// Github callback
+	// github login callback
 	r.HandleFunc("/login/github/callback", githubCallback)
 
-	// api routes which needs authenticated gh user
+	// api routes which needs authenticated user token
 	r.Group(func(r chi.Router) {
 		r.Use(withUser)
 		// ...
 	})
-
-	// swagger docs
-	r.Get("/docs/*", httpSwagger.Handler())
 
 	return r
 }

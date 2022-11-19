@@ -26,7 +26,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "moonbase.mw.zone",
-	BasePath:         "/api",
+	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Moonbase API",
 	Description:      "Git-based headless CMS API.",
