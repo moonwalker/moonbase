@@ -67,11 +67,7 @@ func githubConfig() *oauth2.Config {
 }
 
 func githubAuth(w http.ResponseWriter, r *http.Request) {
-	returnURL := r.FormValue("returnURL")
-	if returnURL == "" {
-		returnURL = r.Referer()
-	}
-	state := fmt.Sprintf("%s%s%s", oauthStateSecret, oauthStateSeparator, returnURL)
+	state := encodeState(r)
 	url := githubConfig().AuthCodeURL(state, oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
@@ -79,23 +75,24 @@ func githubAuth(w http.ResponseWriter, r *http.Request) {
 func githubCallback(w http.ResponseWriter, r *http.Request) {
 	githubConfig := githubConfig()
 
-	state := r.FormValue("state")
-	s := strings.Split(state, oauthStateSeparator)
-	secret, returnURL := s[0], s[1]
-
+	secret, returnURL := decodeState(r)
 	if secret != oauthStateSecret {
 		httpError(w, -1, "invalid oauth state secret", fmt.Errorf("expected: %s, actual: %s", oauthStateSecret, secret))
 		return
 	}
 
 	code := r.FormValue("code")
+
+	// IDEA: here we can return with the 'code' (encrypted) to the client
+	// and the client can initiate the oauth exchange step
+	// so we won't need popup or iframe solutions
+	println(returnURLWithCode(returnURL, code))
+
 	token, err := githubConfig.Exchange(oauth2.NoContext, code)
 	if err != nil {
 		httpError(w, -1, "oauth exchange failed", err)
 		return
 	}
-
-	fmt.Printf("%s?code=%s", returnURL, code)
 
 	oauthClient := githubConfig.Client(oauth2.NoContext, token)
 	ghClient := github.NewClient(oauthClient)
@@ -133,10 +130,40 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 
 func encryptAccessToken(user *github.User, accessToken string) (string, error) {
 	payload := &TokenData{Login: *user.Login, AccessToken: accessToken}
-	te, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, payload, 30)
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	te, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, data, 30)
 	if err != nil {
 		return "", err
 	}
 
 	return te, nil
+}
+
+func encodeState(r *http.Request) string {
+	returnURL := r.FormValue("returnURL")
+	if returnURL == "" {
+		returnURL = r.Referer()
+	}
+	state := fmt.Sprintf("%s%s%s", oauthStateSecret, oauthStateSeparator, returnURL)
+	return base64.URLEncoding.EncodeToString([]byte(state))
+}
+
+func decodeState(r *http.Request) (string, string) {
+	state, _ := base64.URLEncoding.DecodeString(r.FormValue("state"))
+	parts := strings.Split(string(state), oauthStateSeparator)
+	return parts[0], parts[1]
+}
+
+func returnURLWithCode(returnURL, code string) (string, error) {
+	codeJWT, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, []byte(code), 30)
+	if err != nil {
+		return "", err
+	}
+
+	u := fmt.Sprintf("%s?code=%s", returnURL, codeJWT)
+	return u, nil
 }

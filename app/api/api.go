@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -63,15 +64,22 @@ func withUser(next http.Handler) http.Handler {
 			return
 		}
 
-		ghUser := &github.User{}
-		token, err := jwt.VerifyAndDecrypt(env.JweKey, env.JwtKey, tokenString, ghUser)
+		token, err := jwt.VerifyAndDecrypt(env.JweKey, env.JwtKey, tokenString)
 		if err != nil {
 			httpError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), err)
 			return
 		}
 
-		if !token.Valid {
-			httpError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), fmt.Errorf("invalid auth token"))
+		authClaims, ok := token.Claims.(*jwt.AuthClaims)
+		if !ok {
+			httpError(w, http.StatusInternalServerError, "invalid auth claims type", nil)
+			return
+		}
+
+		ghUser := &github.User{}
+		err = json.Unmarshal(authClaims.Data, ghUser)
+		if err != nil {
+			httpError(w, http.StatusInternalServerError, "failed to unmarshal auth claims data", err)
 			return
 		}
 

@@ -1,7 +1,6 @@
 package jwt
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -10,23 +9,18 @@ import (
 	"github.com/moonwalker/moonbase/pkg/jwe"
 )
 
-type authClaims struct {
+type AuthClaims struct {
 	jwt.StandardClaims
 	Data []byte `json:"data"`
 }
 
-func EncryptAndSign(encKey, sigKey []byte, payload interface{}, expiresInMin int) (string, error) {
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return "", err
-	}
-
+func EncryptAndSign(encKey, sigKey []byte, data []byte, expiresInMin int) (string, error) {
 	encData, err := jwe.Encrypt(encKey, data)
 	if err != nil {
 		return "", err
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &authClaims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, &AuthClaims{
 		Data: encData,
 		StandardClaims: jwt.StandardClaims{
 			IssuedAt:  time.Now().Unix(),
@@ -38,8 +32,8 @@ func EncryptAndSign(encKey, sigKey []byte, payload interface{}, expiresInMin int
 	return token.SignedString(sigKey)
 }
 
-func VerifyAndDecrypt(encKey, sigKey []byte, tokenString string, payload interface{}) (*jwt.Token, error) {
-	claims := &authClaims{}
+func VerifyAndDecrypt(encKey, sigKey []byte, tokenString string) (*jwt.Token, error) {
+	claims := &AuthClaims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return sigKey, nil
 	})
@@ -51,11 +45,6 @@ func VerifyAndDecrypt(encKey, sigKey []byte, tokenString string, payload interfa
 	}
 
 	claims.Data, err = jwe.Decrypt(encKey, claims.Data)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(claims.Data, &payload)
 	if err != nil {
 		return nil, err
 	}

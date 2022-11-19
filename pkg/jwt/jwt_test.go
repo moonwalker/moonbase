@@ -1,6 +1,8 @@
 package jwt
 
 import (
+	"encoding/json"
+	"errors"
 	"testing"
 )
 
@@ -16,13 +18,28 @@ type testData struct {
 
 func TestEncryptDecrypt(t *testing.T) {
 	payload := &testData{Name: "Foo", Email: "bar@example.com"}
-	te, err := EncryptAndSign(encKey, sigKey, payload, 1)
+	data, err := json.Marshal(payload)
 	if err != nil {
 		t.Error(err)
 	}
 
+	te, err := EncryptAndSign(encKey, sigKey, data, 1)
+	if err != nil {
+		t.Error(err)
+	}
+
+	token, err := VerifyAndDecrypt(encKey, sigKey, te)
+	if err != nil {
+		t.Error(err)
+	}
+
+	authClaims, ok := token.Claims.(*AuthClaims)
+	if !ok {
+		t.Error(errors.New("invalid token claims type"))
+	}
+
 	outPayload := &testData{}
-	_, err = VerifyAndDecrypt(encKey, sigKey, te, outPayload)
+	err = json.Unmarshal(authClaims.Data, outPayload)
 	if err != nil {
 		t.Error(err)
 	}

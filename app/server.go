@@ -3,7 +3,9 @@ package app
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi"
 
@@ -17,6 +19,10 @@ type Options struct {
 
 type Server struct {
 	*Options
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }
 
 func NewServer(options *Options) *Server {
