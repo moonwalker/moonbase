@@ -1,22 +1,15 @@
 package api
 
 import (
-	"net/http"
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
-	"github.com/go-chi/chi"
-	httpSwagger "github.com/swaggo/http-swagger"
-
-	_ "github.com/moonwalker/moonbase/docs"
+	d "github.com/moonwalker/moonbase/docs"
 )
 
-func docs() chi.Router {
-	r := chi.NewRouter()
-
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/docs/", http.StatusTemporaryRedirect)
-	})
-
-	r.Get("/*", httpSwagger.Handler())
-
-	return r
+func docs() gin.HandlerFunc {
+	d.SwaggerInfo.Version = "1.0"
+	d.SwaggerInfo.Host = "moonbase.mw.zone"
+	return ginSwagger.WrapHandler(swaggerFiles.Handler)
 }

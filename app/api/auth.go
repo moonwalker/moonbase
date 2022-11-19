@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v48/github"
 	"github.com/rs/xid"
 	"golang.org/x/oauth2"
@@ -16,25 +17,6 @@ import (
 	"github.com/moonwalker/moonbase/pkg/env"
 	"github.com/moonwalker/moonbase/pkg/jwt"
 )
-
-const respHtml = `
-<html>
-<head>
-<head/>
-<body>
-<script>
-window.onload = function() {
-	var token, user;
-	var match = document.cookie.match(new RegExp('(^| )gh_token=([^;]+)'));
-  	if (match) token = match[2];
-	match = document.cookie.match(new RegExp('(^| )artms_user=([^;]+)'));
-  	if (match) user = match[2];
-	window.opener.postMessage({ gh_token: token, artms_user: user }, '*');
-	window.close();
-};
-</script>
-</body
-</html>`
 
 const (
 	oauthStateSeparator = "|"
@@ -55,6 +37,7 @@ type User struct {
 	Name  *string `json:"name,omitempty"`
 	Email *string `json:"email,omitempty"`
 	Image *string `json:"image,omitempty"`
+	Token string  `json:"token,omitempty"`
 }
 
 func githubConfig() *oauth2.Config {
@@ -66,22 +49,31 @@ func githubConfig() *oauth2.Config {
 	}
 }
 
-func githubAuth(w http.ResponseWriter, r *http.Request) {
-	state := encodeState(r)
+// Github login
+//
+//	@Summary		login via github
+//	@Description	github login
+//	@ID				gh-login
+//	@Accept			json
+//	@Produce		json
+//	@Success		200		{string}	string			"ok"
+//	@Router			/login/github [get]
+func githubAuth(c *gin.Context) {
+	state := encodeState(c.Request)
 	url := githubConfig().AuthCodeURL(state, oauth2.AccessTypeOnline)
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
-func githubCallback(w http.ResponseWriter, r *http.Request) {
+func githubCallback(c *gin.Context) {
 	githubConfig := githubConfig()
 
-	secret, returnURL := decodeState(r)
+	secret, returnURL := decodeState(c.Request)
 	if secret != oauthStateSecret {
-		httpError(w, -1, "invalid oauth state secret", fmt.Errorf("expected: %s, actual: %s", oauthStateSecret, secret))
+		httpError(c, -1, "invalid oauth state secret", fmt.Errorf("expected: %s, actual: %s", oauthStateSecret, secret))
 		return
 	}
 
-	code := r.FormValue("code")
+	code := c.Request.FormValue("code")
 
 	// IDEA: here we can return with the 'code' (encrypted) to the client
 	// and the client can initiate the oauth exchange step
@@ -90,7 +82,7 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 
 	token, err := githubConfig.Exchange(oauth2.NoContext, code)
 	if err != nil {
-		httpError(w, -1, "oauth exchange failed", err)
+		httpError(c, -1, "oauth exchange failed", err)
 		return
 	}
 
@@ -98,34 +90,25 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 	ghClient := github.NewClient(oauthClient)
 	ghUser, _, err := ghClient.Users.Get(context.Background(), "")
 	if err != nil {
-		httpError(w, -1, "github client failed to get user", err)
+		httpError(c, -1, "github client failed to get user", err)
 		return
 	}
 
 	et, err := encryptAccessToken(ghUser, token.AccessToken)
 	if err != nil {
-		httpError(w, -1, "failed to encrypt token", err)
+		httpError(c, -1, "failed to encrypt token", err)
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{Name: "gh_token", Value: et, Path: "/"})
-	// json.NewEncoder(w).Encode(User{
-	// 	Login: ghUser.Login,
-	// 	Name:  ghUser.Name,
-	// 	Email: ghUser.Email,
-	// 	Image: ghUser.AvatarURL,
-	// })
-
-	u, _ := json.Marshal(User{
+	u := &User{
 		Login: ghUser.Login,
 		Name:  ghUser.Name,
 		Email: ghUser.Email,
 		Image: ghUser.AvatarURL,
-	})
-	http.SetCookie(w, &http.Cookie{Name: "artms_user", Value: base64.StdEncoding.EncodeToString(u), Path: "/"})
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		Token: et,
+	}
 
-	fmt.Fprint(w, respHtml)
+	c.JSON(http.StatusOK, u)
 }
 
 func encryptAccessToken(user *github.User, accessToken string) (string, error) {
@@ -166,4 +149,48 @@ func returnURLWithCode(returnURL, code string) (string, error) {
 
 	u := fmt.Sprintf("%s?code=%s", returnURL, codeJWT)
 	return u, nil
+}
+
+const USER_CTX_KEY = "gh-user"
+
+func withUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var tokenString string
+
+		// get token from authorization header
+		bearer := c.Request.Header.Get("Authorization")
+		if len(bearer) > 7 && strings.ToUpper(bearer[0:6]) == "BEARER" {
+			tokenString = bearer[7:]
+		}
+		if len(tokenString) == 0 {
+			httpError(c, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), fmt.Errorf("no auth token"))
+			return
+		}
+
+		token, err := jwt.VerifyAndDecrypt(env.JweKey, env.JwtKey, tokenString)
+		if err != nil {
+			httpError(c, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), err)
+			return
+		}
+
+		authClaims, ok := token.Claims.(*jwt.AuthClaims)
+		if !ok {
+			httpError(c, http.StatusInternalServerError, "invalid auth claims type", nil)
+			return
+		}
+
+		ghUser := &github.User{}
+		err = json.Unmarshal(authClaims.Data, ghUser)
+		if err != nil {
+			httpError(c, http.StatusInternalServerError, "failed to unmarshal auth claims data", err)
+			return
+		}
+
+		// add auth claims to context
+		ctx := context.WithValue(c.Request.Context(), USER_CTX_KEY, ghUser)
+		c.Request = c.Request.WithContext(ctx)
+
+		// authenticated, pass it through
+		c.Next()
+	}
 }

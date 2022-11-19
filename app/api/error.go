@@ -1,8 +1,9 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Error struct {
@@ -11,13 +12,10 @@ type Error struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func httpError(w http.ResponseWriter, code int, msg string, err error) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(http.StatusInternalServerError)
+func httpError(c *gin.Context, code int, msg string, err error) {
 	var e string
 	if err != nil {
 		e = err.Error()
 	}
-	json.NewEncoder(w).Encode(Error{code, msg, e})
+	c.JSON(http.StatusInternalServerError, Error{code, msg, e})
 }

@@ -1,5 +1,3 @@
-basePath: /
-host: moonbase.mw.zone
 info:
   contact: {}
   description: Git-based headless CMS API.
@@ -7,6 +5,19 @@ info:
     name: MIT
     url: https://github.com/moonwalker/moonbase/blob/main/LICENSE
   title: Moonbase API
-  version: "1.0"
-paths: {}
+paths:
+  /login/github:
+    get:
+      consumes:
+      - application/json
+      description: github login
+      operationId: gh-login
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: string
+      summary: login via github
 swagger: "2.0"
