@@ -15,6 +15,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy --remote-only
+      - run: echo "shortrev=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_ENV
 
   notify:
     needs: [deploy]
@@ -24,12 +25,6 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
     steps:
-      - uses: actions/checkout@v3
-      - name: set short git commit SHA
-        id: vars
-        run: |
-          calculatedSha=$(git rev-parse --short ${{ github.sha }})
-          echo "::set-output name=short_sha::$calculatedSha"
       - uses: slackapi/slack-github-action@v1.23.0
         with:
           payload: |
@@ -39,7 +34,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*moonbase deployment*\nhttps://github.com/moonwalker/moonbase/commit/${{ steps.vars.outputs.short_sha }} deployed to https://moonbase.mw.zone"
+                    "text": "*moonbase deployment*\nhttps://github.com/moonwalker/moonbase/commit/${{ job.deploy.env.shortrev }}\ndeployed to https://moonbase.mw.zone"
                   },
                   "accessory": {
                     "type": "image",
