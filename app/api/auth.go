@@ -136,7 +136,7 @@ func authenticateCallback(w http.ResponseWriter, r *http.Request) {
 		Image: ghUser.AvatarURL,
 	}
 	w.Header().Set("Content-Type", "text/json; charset=utf-8")
-	println(res)
+
 	json.NewEncoder(w).Encode(res)
 }
 
