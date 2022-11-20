@@ -15,7 +15,6 @@ import (
 )
 
 // @title Moonbase API
-// @version 1.0
 // @description Git-based headless CMS API.
 
 // @license.name MIT

@@ -7,12 +7,13 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	d "github.com/moonwalker/moonbase/docs"
+	"github.com/moonwalker/moonbase/pkg/version"
 )
 
 func docs() chi.Router {
 	r := chi.NewRouter()
 
-	d.SwaggerInfo.Version = "1.0"
+	d.SwaggerInfo.Version = version.ShortRev()
 
 	r.Use(docsRedirect())
 	r.Get("/*", httpSwagger.Handler())

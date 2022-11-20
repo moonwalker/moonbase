@@ -6,7 +6,7 @@ COPY cmd ./cmd
 COPY docs ./docs
 COPY pkg ./pkg
 COPY vendor ./vendor
-RUN CGO_ENABLED=0 GOOS=linux go build -o moonbase ./cmd/moonbase
+RUN CGO_ENABLED=0 go build -o moonbase ./cmd/moonbase
 
 FROM cgr.dev/chainguard/alpine-base
 RUN apk --no-cache add ca-certificates

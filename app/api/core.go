@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
+	"github.com/moonwalker/moonbase/pkg/version"
 )
 
 const (
@@ -40,7 +41,7 @@ func core() chi.Router {
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
-	response(w, r, "index.html", &indexJson{"Moonbase", "v1.0"})
+	response(w, r, "index.html", &indexJson{"moonbase", version.ShortRev()})
 }
 
 func notFound(w http.ResponseWriter, r *http.Request) {
