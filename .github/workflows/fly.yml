@@ -5,19 +5,30 @@ on:
     branches:
       - main
 
-env:
-  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-
 jobs:
   deploy:
     name: Deploy app
     runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
     steps:
       - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy --remote-only
+
+  notify:
+    needs: [deploy]
+    name: Notify slack
+    runs-on: ubuntu-latest
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+    steps:
+      - name: set short git commit SHA
+        id: vars
+        run: |
+          calculatedSha=$(git rev-parse --short ${{ github.sha }})
+          echo "::set-output name=short_sha::$calculatedSha"
       - uses: slackapi/slack-github-action@v1.23.0
         with:
           payload: |
@@ -27,12 +38,12 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Moonbase deployment*\ncommit: ${{ github.event.head_commit.url }} deployed to https://moonbase.mw.zone"
+                    "text": "*moonbase deployment*\nhttps://github.com/moonwalker/moonbase/commit/${{ steps.vars.outputs.short_sha }} deployed to https://moonbase.mw.zone"
                   },
                   "accessory": {
                     "type": "image",
                     "image_url": "https://moonbase.mw.zone/assets/moon_logo.png",
-                    "alt_text": "moonbase"
+                    "alt_text": "moonbase logo"
                   }
                 }
               ]
