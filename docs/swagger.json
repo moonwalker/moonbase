@@ -10,7 +10,5 @@
         },
         "version": "1.0"
     },
-    "host": "moonbase.mw.zone",
-    "basePath": "/",
     "paths": {}
 }

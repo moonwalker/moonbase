@@ -1,5 +1,3 @@
-basePath: /
-host: moonbase.mw.zone
 info:
   contact: {}
   description: Git-based headless CMS API.

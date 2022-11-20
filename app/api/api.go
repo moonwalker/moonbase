@@ -20,9 +20,6 @@ import (
 
 // @license.name MIT
 // @license.url https://github.com/moonwalker/moonbase/blob/main/LICENSE
-
-// @host moonbase.mw.zone
-// @BasePath /
 func Routes() chi.Router {
 	r := chi.NewRouter()
 
@@ -33,10 +30,10 @@ func Routes() chi.Router {
 	r.Mount("/docs", docs())
 
 	// github login
-	r.HandleFunc("/login/github", githubAuth)
+	r.Get("/login/github", githubAuth)
 
 	// github login callback
-	r.HandleFunc("/login/github/callback", githubCallback)
+	r.Get("/login/github/callback", githubCallback)
 
 	// api routes which needs authenticated user token
 	r.Group(func(r chi.Router) {
