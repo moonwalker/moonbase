@@ -1,10 +1,13 @@
 package cli
 
 import (
+	"log"
+
 	"github.com/spf13/cobra"
 
 	"github.com/moonwalker/moonbase/app"
 	"github.com/moonwalker/moonbase/pkg/env"
+	"github.com/moonwalker/moonbase/pkg/version"
 )
 
 var (
@@ -25,6 +28,7 @@ func init() {
 }
 
 func serverCmdF(command *cobra.Command, args []string) error {
+	log.Printf("moonbase version %s", version.ShortRev())
 	srv := app.NewServer(&app.Options{Port: port})
 	return srv.Listen()
 }

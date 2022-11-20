@@ -39,7 +39,7 @@ func (s *Server) Listen() error {
 	r.Mount("/", api.Routes())
 
 	addr := fmt.Sprintf(":%d", s.Options.Port)
-	log.Printf("HTTP Server running at port %s", addr)
+	log.Printf("listen at port %s", addr)
 
 	return http.ListenAndServe(addr, r)
 }

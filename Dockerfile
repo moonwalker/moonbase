@@ -1,14 +1,16 @@
-FROM cgr.dev/chainguard/go:1.19 as build
+FROM golang:alpine AS build
 WORKDIR /work
+COPY .git/ ./.git
 COPY go.mod go.sum ./
 COPY app ./app
 COPY cmd ./cmd
 COPY docs ./docs
 COPY pkg ./pkg
 COPY vendor ./vendor
-RUN CGO_ENABLED=0 go build -o moonbase ./cmd/moonbase
+RUN apk add --no-cache git
+RUN CGO_ENABLED=0 GOOS=linux go build -o moonbase ./cmd/moonbase
 
 FROM cgr.dev/chainguard/alpine-base
 RUN apk --no-cache add ca-certificates
 COPY --from=build /work/moonbase /usr/bin
-CMD ["moonbase"]
+ENTRYPOINT ["moonbase"]
