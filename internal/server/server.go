@@ -1,4 +1,4 @@
-package app
+package server
 
 import (
 	"compress/flate"
@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
 
-	"github.com/moonwalker/moonbase/app/api"
+	"github.com/moonwalker/moonbase/internal/api"
 )
 
 type Options struct {

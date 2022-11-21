@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/moonwalker/moonbase/pkg/version"
+	"github.com/moonwalker/moonbase/internal/version"
 )
 
 const (

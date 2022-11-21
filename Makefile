@@ -5,7 +5,7 @@ vendor:
 	@go mod vendor
 
 docs:
-	@swag init --dir app/api --generalInfo api.go
+	@swag init --dir internal/api --generalInfo api.go
 
 test:
 	@go test -v ./...

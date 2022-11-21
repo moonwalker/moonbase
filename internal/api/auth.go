@@ -16,8 +16,8 @@ import (
 	"golang.org/x/oauth2"
 	githuboauth "golang.org/x/oauth2/github"
 
-	"github.com/moonwalker/moonbase/pkg/env"
-	"github.com/moonwalker/moonbase/pkg/jwt"
+	"github.com/moonwalker/moonbase/internal/env"
+	"github.com/moonwalker/moonbase/internal/jwt"
 )
 
 // testing the flow:

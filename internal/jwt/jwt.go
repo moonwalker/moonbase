@@ -6,7 +6,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	"github.com/moonwalker/moonbase/pkg/jwe"
+	"github.com/moonwalker/moonbase/internal/jwe"
 )
 
 type AuthClaims struct {
