@@ -5,14 +5,11 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi"
 
 	"github.com/moonwalker/moonbase/internal/runtime"
-)
-
-const (
-	jsonContentType = "application/json"
 )
 
 type indexData struct {
@@ -41,19 +38,18 @@ func core() chi.Router {
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
-	response(w, r, "index.html", &indexData{runtime.Name, runtime.ShortRev()})
+	response(w, r, http.StatusOK, "index.html", &indexData{runtime.Name, runtime.ShortRev()})
 }
 
 func notFound(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotFound)
-	response(w, r, "404.html", &Error{Code: http.StatusNotFound, Message: "Not Found"})
+	response(w, r, http.StatusNotFound, "404.html", &errorData{Code: http.StatusNotFound, Message: http.StatusText(http.StatusNotFound)})
 }
 
-func response(w http.ResponseWriter, r *http.Request, view string, data any) {
-	switch r.Header.Get("Content-type") {
-	case jsonContentType:
-		jsonEncode(w, data)
-	default:
+func response(w http.ResponseWriter, r *http.Request, statusCode int, view string, data any) {
+	ct := r.Header.Get("Accept")
+	if strings.Contains(ct, "application/json") {
+		jsonResponse(w, statusCode, data)
+	} else {
 		t.ExecuteTemplate(w, view, data)
 	}
 }

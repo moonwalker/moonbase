@@ -49,7 +49,7 @@ func getRepositories(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	jsonEncode(w, repos)
+	jsonResponse(w, http.StatusOK, repos)
 }
 
 func getBranches(w http.ResponseWriter, r *http.Request) {
@@ -72,5 +72,5 @@ func getBranches(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	jsonEncode(w, bs)
+	jsonResponse(w, http.StatusOK, bs)
 }

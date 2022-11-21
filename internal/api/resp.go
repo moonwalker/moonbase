@@ -1,27 +1,22 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 )
 
-type Error struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-	Error   string `json:"error,omitempty"`
-}
+func jsonResponse(w http.ResponseWriter, statusCode int, v any) {
+	buf := &bytes.Buffer{}
+	enc := json.NewEncoder(buf)
+	enc.SetEscapeHTML(true)
 
-func jsonEncode(w http.ResponseWriter, v any) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	json.NewEncoder(w).Encode(v)
-}
-
-func jsonError(w http.ResponseWriter, code int, msg string, err error) {
-	w.WriteHeader(code)
-	var e string
-	if err != nil {
-		e = err.Error()
+	if err := enc.Encode(v); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	jsonEncode(w, &Error{code, msg, e})
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(statusCode)
+	w.Write(buf.Bytes())
 }

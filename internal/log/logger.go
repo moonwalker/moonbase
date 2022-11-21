@@ -25,3 +25,7 @@ func init() {
 func Info() *zerolog.Event {
 	return zlog.Info()
 }
+
+func Error(err error) *zerolog.Event {
+	return zlog.Error().Err(err)
+}

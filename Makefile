@@ -4,11 +4,14 @@ vendor:
 	@go mod tidy
 	@go mod vendor
 
-docs:
-	@swag init --dir internal/api --generalInfo api.go
+fmt:
+	@go fmt ./internal/...
 
 test:
 	@go test -v ./internal/...
+
+docs:
+	@swag init --dir internal/api --generalInfo api.go
 
 run: docs
 	@go run cmd/moonbase/main.go

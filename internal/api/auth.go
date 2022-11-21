@@ -17,6 +17,7 @@ import (
 
 	"github.com/moonwalker/moonbase/internal/env"
 	"github.com/moonwalker/moonbase/internal/jwt"
+	"github.com/moonwalker/moonbase/internal/log"
 )
 
 // testing the flow:
@@ -52,7 +53,8 @@ func githubConfig() *oauth2.Config {
 func githubAuth(w http.ResponseWriter, r *http.Request) {
 	state, err := encodeState(r)
 	if err != nil {
-		jsonError(w, http.StatusInternalServerError, "failed to encode oauth state", err)
+		log.Error(err)
+		jsonResponse(w, http.StatusInternalServerError, errFailEncOAuthState)
 		return
 	}
 
@@ -63,14 +65,17 @@ func githubAuth(w http.ResponseWriter, r *http.Request) {
 func githubCallback(w http.ResponseWriter, r *http.Request) {
 	secret, returnURL := decodeState(r)
 	if secret != oauthStateSecret {
-		jsonError(w, http.StatusInternalServerError, "invalid oauth state secret", fmt.Errorf("expected: %s, actual: %s", oauthStateSecret, secret))
+		err := fmt.Errorf("expected: %s actual: %s", oauthStateSecret, secret)
+		log.Error(err).Msg(errInvalidOAuthSecret.Message)
+		jsonResponse(w, http.StatusInternalServerError, errInvalidOAuthSecret)
 		return
 	}
 
 	code := r.FormValue("code")
 	url, err := returnURLWithCode(returnURL, code, retUrlCodeQuery)
 	if err != nil {
-		jsonError(w, http.StatusInternalServerError, "failed to encrypt return url with oauth exchange code", err)
+		log.Error(err).Msg(errFailedEncRetURL.Message)
+		jsonResponse(w, http.StatusInternalServerError, errFailedEncRetURL)
 		return
 	}
 
@@ -83,21 +88,23 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 	if code == "" {
 		code = chi.URLParam(r, "code")
 		if code == "" {
-			jsonError(w, http.StatusInternalServerError, "auth code missing", nil)
+			jsonResponse(w, http.StatusInternalServerError, errAuthCodeMissing)
 			return
 		}
 	}
 
 	decoded, err := decryptExchangeCode(code)
 	if err != nil {
-		jsonError(w, http.StatusInternalServerError, "failed to decrypt oauth exchange code", err)
+		log.Error(err).Msg(errFailDecOAuthCode.Message)
+		jsonResponse(w, http.StatusInternalServerError, errFailDecOAuthCode)
 		return
 	}
 
 	githubConfig := githubConfig()
 	token, err := githubConfig.Exchange(oauth2.NoContext, decoded)
 	if err != nil {
-		jsonError(w, http.StatusInternalServerError, "oauth exchange failed", err)
+		log.Error(err).Msg(errFailOAuthExchange.Message)
+		jsonResponse(w, http.StatusInternalServerError, errFailOAuthExchange)
 		return
 	}
 
@@ -105,13 +112,15 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 	ghClient := github.NewClient(oauthClient)
 	ghUser, _, err := ghClient.Users.Get(context.Background(), "")
 	if err != nil {
-		jsonError(w, http.StatusInternalServerError, "github client failed to get user", err)
+		log.Error(err).Msg(errClientFailGetUser.Message)
+		jsonResponse(w, http.StatusInternalServerError, errClientFailGetUser)
 		return
 	}
 
 	et, err := encryptAccessToken(token.AccessToken)
 	if err != nil {
-		jsonError(w, http.StatusInternalServerError, "failed to encrypt token", err)
+		log.Error(err).Msg(errFailEncAccessToken.Message)
+		jsonResponse(w, http.StatusInternalServerError, errFailEncAccessToken)
 		return
 	}
 
@@ -121,7 +130,7 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 		Token: et,
 	}
 
-	jsonEncode(w, usr)
+	jsonResponse(w, http.StatusOK, usr)
 }
 
 func encryptAccessToken(accessToken string) (string, error) {
@@ -198,19 +207,19 @@ func withUser(next http.Handler) http.Handler {
 			tokenString = bearer[7:]
 		}
 		if len(tokenString) == 0 {
-			jsonError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), fmt.Errorf("no auth token"))
+			jsonResponse(w, http.StatusUnauthorized, errNoAuthToken)
 			return
 		}
 
 		token, err := jwt.VerifyAndDecrypt(env.JweKey, env.JwtKey, tokenString)
 		if err != nil {
-			jsonError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), err)
+			jsonResponse(w, http.StatusUnauthorized, errUnauthorized)
 			return
 		}
 
 		authClaims, ok := token.Claims.(*jwt.AuthClaims)
 		if !ok {
-			jsonError(w, http.StatusInternalServerError, "invalid auth claims type", nil)
+			jsonResponse(w, http.StatusInternalServerError, errInvalidAuthClaims)
 			return
 		}
 
