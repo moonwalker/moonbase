@@ -38,11 +38,6 @@ jobs:
                   "text": {
                     "type": "mrkdwn",
                     "text": "new version <${{ github.event.head_commit.url }}|${{ needs.deploy.outputs.gitrev }}> landed on <https://moonbase.mw.zone/docs|moonbase>"
-                  },
-                  "accessory": {
-                    "type": "image",
-                    "image_url": "https://moonbase.mw.zone/assets/logo.png",
-                    "alt_text": "moonbase logo"
                   }
                 }
               ]

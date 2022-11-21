@@ -13,7 +13,7 @@ func docs() chi.Router {
 	r := chi.NewRouter()
 
 	r.Use(docsRedirect())
-	r.HandleFunc("/*", httpSwagger.Handler())
+	r.Get("/*", httpSwagger.Handler())
 
 	return r
 }

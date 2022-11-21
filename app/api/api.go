@@ -35,6 +35,7 @@ func Routes() chi.Router {
 	// github login callback
 	r.Get("/login/github/callback", githubCallback)
 
+	// github loginc authenticate
 	r.Get("/login/github/authenticate/{code}", authenticateCallback)
 
 	// api routes which needs authenticated user token
