@@ -18,24 +18,8 @@ import (
 	"github.com/moonwalker/moonbase/pkg/jwt"
 )
 
-const respHtml = `
-<html>
-<head>
-<head/>
-<body>
-<script>
-window.onload = function() {
-	var token, user;
-	var match = document.cookie.match(new RegExp('(^| )gh_token=([^;]+)'));
-  	if (match) token = match[2];
-	match = document.cookie.match(new RegExp('(^| )artms_user=([^;]+)'));
-  	if (match) user = match[2];
-	window.opener.postMessage({ gh_token: token, artms_user: user }, '*');
-	window.close();
-};
-</script>
-</body
-</html>`
+// testing the flow:
+// http://localhost:8080/login/github?returnURL=/login/github/authenticate
 
 const (
 	oauthStateSeparator = "|"
@@ -56,6 +40,7 @@ type User struct {
 	Name  *string `json:"name,omitempty"`
 	Email *string `json:"email,omitempty"`
 	Image *string `json:"image,omitempty"`
+	Token string  `json:"token,omitempty"`
 }
 
 func githubConfig() *oauth2.Config {
@@ -81,12 +66,9 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := r.FormValue("code")
-	// IDEA: here we can return with the 'code' (encrypted) to the client
-	// and the client can initiate the oauth exchange step
-	// so we won't need popup or iframe solutions
 	url, err := returnURLWithCode(returnURL, code)
 	if err != nil {
-		httpError(w, -1, "encrypt jwt key failed", err)
+		httpError(w, -1, "failed to encrypt return url with oauth exchange code", err)
 		return
 	}
 
@@ -101,9 +83,9 @@ func authenticateCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	decoded, err := decryptJWTCode(code)
+	decoded, err := decryptExchangeCode(code)
 	if err != nil {
-		httpError(w, -1, "decoding token failed", err)
+		httpError(w, -1, "failed to decrypt oauth exchange code", err)
 		return
 	}
 
@@ -127,17 +109,16 @@ func authenticateCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := make(map[string]interface{})
-	res["gh_token"] = et
-	res["artms_user"] = User{
+	usr := &User{
 		Login: ghUser.Login,
 		Name:  ghUser.Name,
 		Email: ghUser.Email,
 		Image: ghUser.AvatarURL,
+		Token: et,
 	}
-	w.Header().Set("Content-Type", "text/json; charset=utf-8")
 
-	json.NewEncoder(w).Encode(res)
+	w.Header().Set("Content-Type", "text/json; charset=utf-8")
+	json.NewEncoder(w).Encode(usr)
 }
 
 func encryptAccessToken(user *github.User, accessToken string) (string, error) {
@@ -176,11 +157,11 @@ func returnURLWithCode(returnURL, code string) (string, error) {
 		return "", err
 	}
 
-	u := fmt.Sprintf("%s?code=%s", returnURL, codeJWT)
+	u := fmt.Sprintf("%s/%s", returnURL, codeJWT)
 	return u, nil
 }
 
-func decryptJWTCode(code string) (string, error) {
+func decryptExchangeCode(code string) (string, error) {
 	token, err := jwt.VerifyAndDecrypt(env.JweKey, env.JwtKey, code)
 	if err != nil {
 		return "", err

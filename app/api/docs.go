@@ -12,8 +12,8 @@ import (
 func docs() chi.Router {
 	r := chi.NewRouter()
 
-	r.Use(docsRedirect())
-	r.Get("/*", httpSwagger.Handler())
+	// r.Use(docsRedirect())
+	r.Get("/", httpSwagger.Handler())
 
 	return r
 }

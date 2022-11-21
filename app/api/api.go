@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
-	"github.com/google/go-github/v48/github"
+	httpSwagger "github.com/swaggo/http-swagger"
 
 	"github.com/moonwalker/moonbase/pkg/env"
 	"github.com/moonwalker/moonbase/pkg/jwt"
@@ -26,6 +26,8 @@ func Routes() chi.Router {
 	// index, 404, etc. (supports html and json)
 	r.Mount("/", core())
 
+	r.Get("/docs2/*", httpSwagger.Handler())
+
 	// swagger docs
 	r.Mount("/docs", docs())
 
@@ -35,7 +37,7 @@ func Routes() chi.Router {
 	// github login callback
 	r.Get("/login/github/callback", githubCallback)
 
-	// github loginc authenticate
+	// github login authenticate
 	r.Get("/login/github/authenticate/{code}", authenticateCallback)
 
 	// api routes which needs authenticated user token
@@ -47,7 +49,7 @@ func Routes() chi.Router {
 	return r
 }
 
-const USER_CTX_KEY = "gh-user"
+const USER_CTX_KEY = "user-token"
 
 func withUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -75,15 +77,15 @@ func withUser(next http.Handler) http.Handler {
 			return
 		}
 
-		ghUser := &github.User{}
-		err = json.Unmarshal(authClaims.Data, ghUser)
+		tokenData := &TokenData{}
+		err = json.Unmarshal(authClaims.Data, tokenData)
 		if err != nil {
 			httpError(w, http.StatusInternalServerError, "failed to unmarshal auth claims data", err)
 			return
 		}
 
 		// add auth claims to context
-		ctx := context.WithValue(r.Context(), USER_CTX_KEY, ghUser)
+		ctx := context.WithValue(r.Context(), USER_CTX_KEY, tokenData)
 
 		// authenticated, pass it through
 		next.ServeHTTP(w, r.WithContext(ctx))
