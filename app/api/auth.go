@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"path"
 	"strings"
 
 	"github.com/go-chi/chi"
@@ -53,7 +55,12 @@ func githubConfig() *oauth2.Config {
 }
 
 func githubAuth(w http.ResponseWriter, r *http.Request) {
-	state := encodeState(r)
+	state, err := encodeState(r)
+	if err != nil {
+		httpError(w, -1, "failed to encode oauth state", err)
+		return
+	}
+
 	url := githubConfig().AuthCodeURL(state, oauth2.AccessTypeOnline)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
@@ -66,7 +73,7 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := r.FormValue("code")
-	url, err := returnURLWithCode(returnURL, code)
+	url, err := returnURLWithCode(returnURL, code, true)
 	if err != nil {
 		httpError(w, -1, "failed to encrypt return url with oauth exchange code", err)
 		return
@@ -75,12 +82,15 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-func authenticateCallback(w http.ResponseWriter, r *http.Request) {
-	githubConfig := githubConfig()
-	code := chi.URLParam(r, "code")
+func authenticateHandler(w http.ResponseWriter, r *http.Request) {
+	code := r.FormValue("code")
+
 	if code == "" {
-		httpError(w, -1, "auth code missing", nil)
-		return
+		code = chi.URLParam(r, "code")
+		if code == "" {
+			httpError(w, -1, "auth code missing", nil)
+			return
+		}
 	}
 
 	decoded, err := decryptExchangeCode(code)
@@ -89,6 +99,7 @@ func authenticateCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	githubConfig := githubConfig()
 	token, err := githubConfig.Exchange(oauth2.NoContext, decoded)
 	if err != nil {
 		httpError(w, -1, "oauth exchange failed", err)
@@ -136,13 +147,21 @@ func encryptAccessToken(user *github.User, accessToken string) (string, error) {
 	return te, nil
 }
 
-func encodeState(r *http.Request) string {
+func encodeState(r *http.Request) (string, error) {
 	returnURL := r.FormValue("returnURL")
-	if returnURL == "" {
-		returnURL = r.Referer()
+
+	u, err := url.Parse(returnURL)
+	if err != nil {
+		return "", err
 	}
-	state := fmt.Sprintf("%s%s%s", oauthStateSecret, oauthStateSeparator, returnURL)
-	return base64.URLEncoding.EncodeToString([]byte(state))
+
+	if !u.IsAbs() {
+		u, err = url.Parse(r.Referer())
+		u.Path = returnURL
+	}
+
+	state := fmt.Sprintf("%s%s%s", oauthStateSecret, oauthStateSeparator, u)
+	return base64.URLEncoding.EncodeToString([]byte(state)), nil
 }
 
 func decodeState(r *http.Request) (string, string) {
@@ -151,14 +170,27 @@ func decodeState(r *http.Request) (string, string) {
 	return parts[0], parts[1]
 }
 
-func returnURLWithCode(returnURL, code string) (string, error) {
+func returnURLWithCode(returnURL, code string, qs bool) (string, error) {
+	u, err := url.Parse(returnURL)
+	if err != nil {
+		return "", err
+	}
+
 	codeJWT, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, []byte(code), 30)
 	if err != nil {
 		return "", err
 	}
 
-	u := fmt.Sprintf("%s/%s", returnURL, codeJWT)
-	return u, nil
+	if qs {
+		u.RawQuery = url.Values{
+			"code": {codeJWT},
+		}.Encode()
+
+	} else {
+		u.Path = path.Join(u.Path, codeJWT)
+	}
+
+	return u.String(), nil
 }
 
 func decryptExchangeCode(code string) (string, error) {
