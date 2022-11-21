@@ -81,10 +81,14 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func authenticateHandler(w http.ResponseWriter, r *http.Request) {
-	code := chi.URLParam(r, "code")
+	code := r.FormValue("code")
+
 	if code == "" {
-		httpError(w, -1, "auth code missing", nil)
-		return
+		code = chi.URLParam(r, "code")
+		if code == "" {
+			httpError(w, -1, "auth code missing", nil)
+			return
+		}
 	}
 
 	decoded, err := decryptExchangeCode(code)
