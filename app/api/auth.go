@@ -24,8 +24,10 @@ import (
 // http://localhost:8080/login/github?returnURL=/login/github/authenticate
 
 const (
-	oauthStateSeparator = "|"
-	USER_CTX_KEY        = "user-token"
+	userCtxKey          = "user-token"
+	oauthStateSep       = "|"
+	retUrlCodeQuery int = 0
+	retUrlCodePath      = 1
 )
 
 var (
@@ -69,7 +71,7 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := r.FormValue("code")
-	url, err := returnURLWithCode(returnURL, code, true)
+	url, err := returnURLWithCode(returnURL, code, retUrlCodeQuery)
 	if err != nil {
 		httpError(w, -1, "failed to encrypt return url with oauth exchange code", err)
 		return
@@ -79,14 +81,10 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func authenticateHandler(w http.ResponseWriter, r *http.Request) {
-	code := r.FormValue("code")
-
+	code := chi.URLParam(r, "code")
 	if code == "" {
-		code = chi.URLParam(r, "code")
-		if code == "" {
-			httpError(w, -1, "auth code missing", nil)
-			return
-		}
+		httpError(w, -1, "auth code missing", nil)
+		return
 	}
 
 	decoded, err := decryptExchangeCode(code)
@@ -150,17 +148,17 @@ func encodeState(r *http.Request) (string, error) {
 		u.Path = returnURL
 	}
 
-	state := fmt.Sprintf("%s%s%s", oauthStateSecret, oauthStateSeparator, u)
+	state := fmt.Sprintf("%s%s%s", oauthStateSecret, oauthStateSep, u)
 	return base64.URLEncoding.EncodeToString([]byte(state)), nil
 }
 
 func decodeState(r *http.Request) (string, string) {
 	state, _ := base64.URLEncoding.DecodeString(r.FormValue("state"))
-	parts := strings.Split(string(state), oauthStateSeparator)
+	parts := strings.Split(string(state), oauthStateSep)
 	return parts[0], parts[1]
 }
 
-func returnURLWithCode(returnURL, code string, qs bool) (string, error) {
+func returnURLWithCode(returnURL, code string, m int) (string, error) {
 	u, err := url.Parse(returnURL)
 	if err != nil {
 		return "", err
@@ -171,12 +169,12 @@ func returnURLWithCode(returnURL, code string, qs bool) (string, error) {
 		return "", err
 	}
 
-	if qs {
+	switch {
+	case m == retUrlCodeQuery:
 		u.RawQuery = url.Values{
 			"code": {codeJWT},
 		}.Encode()
-
-	} else {
+	case m == retUrlCodePath:
 		u.Path = path.Join(u.Path, codeJWT)
 	}
 
@@ -219,7 +217,7 @@ func withUser(next http.Handler) http.Handler {
 		}
 
 		// add auth claims to context
-		ctx := context.WithValue(r.Context(), USER_CTX_KEY, string(authClaims.Data))
+		ctx := context.WithValue(r.Context(), userCtxKey, string(authClaims.Data))
 
 		// authenticated, pass it through
 		next.ServeHTTP(w, r.WithContext(ctx))

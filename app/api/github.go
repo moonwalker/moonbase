@@ -22,7 +22,7 @@ func createClient(accessToken string) *github.Client {
 
 func getRepositories(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := ctx.Value(USER_CTX_KEY).(string)
+	accessToken := ctx.Value(userCtxKey).(string)
 
 	githubClient := createClient(accessToken)
 	grs, _, err := githubClient.Repositories.List(ctx, "", &github.RepositoryListOptions{
@@ -48,7 +48,7 @@ func getRepositories(w http.ResponseWriter, r *http.Request) {
 
 func getBranches(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := ctx.Value(USER_CTX_KEY).(string)
+	accessToken := ctx.Value(userCtxKey).(string)
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
 
