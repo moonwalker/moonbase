@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-chi/chi"
 	"github.com/google/go-github/v48/github"
 	"github.com/rs/xid"
 	"golang.org/x/oauth2"
@@ -73,8 +74,6 @@ func githubAuth(w http.ResponseWriter, r *http.Request) {
 }
 
 func githubCallback(w http.ResponseWriter, r *http.Request) {
-	githubConfig := githubConfig()
-
 	secret, returnURL := decodeState(r)
 	if secret != oauthStateSecret {
 		httpError(w, -1, "invalid oauth state secret", fmt.Errorf("expected: %s, actual: %s", oauthStateSecret, secret))
@@ -82,13 +81,33 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := r.FormValue("code")
-
 	// IDEA: here we can return with the 'code' (encrypted) to the client
 	// and the client can initiate the oauth exchange step
 	// so we won't need popup or iframe solutions
-	println(returnURLWithCode(returnURL, code))
+	url, err := returnURLWithCode(returnURL, code)
+	if err != nil {
+		httpError(w, -1, "encrypt jwt key failed", err)
+		return
+	}
 
-	token, err := githubConfig.Exchange(oauth2.NoContext, code)
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+}
+
+func authenticateCallback(w http.ResponseWriter, r *http.Request) {
+	githubConfig := githubConfig()
+	code := chi.URLParam(r, "code")
+	if code == "" {
+		httpError(w, -1, "auth code missing", nil)
+		return
+	}
+
+	decoded, err := decryptJWTCode(code)
+	if err != nil {
+		httpError(w, -1, "decoding token failed", err)
+		return
+	}
+
+	token, err := githubConfig.Exchange(oauth2.NoContext, decoded)
 	if err != nil {
 		httpError(w, -1, "oauth exchange failed", err)
 		return
@@ -108,24 +127,17 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{Name: "gh_token", Value: et, Path: "/"})
-	// json.NewEncoder(w).Encode(User{
-	// 	Login: ghUser.Login,
-	// 	Name:  ghUser.Name,
-	// 	Email: ghUser.Email,
-	// 	Image: ghUser.AvatarURL,
-	// })
-
-	u, _ := json.Marshal(User{
+	res := make(map[string]interface{})
+	res["gh_token"] = et
+	res["artms_user"] = User{
 		Login: ghUser.Login,
 		Name:  ghUser.Name,
 		Email: ghUser.Email,
 		Image: ghUser.AvatarURL,
-	})
-	http.SetCookie(w, &http.Cookie{Name: "artms_user", Value: base64.StdEncoding.EncodeToString(u), Path: "/"})
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	}
+	w.Header().Set("Content-Type", "text/json; charset=utf-8")
 
-	fmt.Fprint(w, respHtml)
+	json.NewEncoder(w).Encode(res)
 }
 
 func encryptAccessToken(user *github.User, accessToken string) (string, error) {
@@ -166,4 +178,13 @@ func returnURLWithCode(returnURL, code string) (string, error) {
 
 	u := fmt.Sprintf("%s?code=%s", returnURL, codeJWT)
 	return u, nil
+}
+
+func decryptJWTCode(code string) (string, error) {
+	token, err := jwt.VerifyAndDecrypt(env.JweKey, env.JwtKey, code)
+	if err != nil {
+		return "", err
+	}
+
+	return string(token.Claims.(*jwt.AuthClaims).Data), nil
 }
