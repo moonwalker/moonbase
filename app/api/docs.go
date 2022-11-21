@@ -18,15 +18,17 @@ func docsHandler() http.HandlerFunc {
 	return httpSwagger.Handler(
 		httpSwagger.UIConfig(map[string]string{
 			"requestInterceptor": `(req) => {
-				req.headers['Authorization'] = 'Bearer ' + req.headers['Authorization']
+				if (req.headers['Authorization']) {
+					req.headers['Authorization'] = 'Bearer ' + req.headers['Authorization']
+				}
 				return req
 			}`,
 			"onComplete": `() => {
 				const btn = document.createElement("button")
-				btn.innerHTML = "Login"
+				btn.innerText = "Login"
 				btn.className = "btn"
 				btn.style.marginRight = "1em"
-				btn.onclick = function () {
+				btn.onclick = () => {
 					window.open("/login/github?returnURL=/login/github/authenticate")
 				}
 				const authWrapper = document.querySelector(".auth-wrapper")
