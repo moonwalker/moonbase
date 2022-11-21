@@ -27,13 +27,12 @@ paths:
               $ref: '#/definitions/api.listItem'
             type: array
       security:
-      - apiKey: []
+      - bearerToken: []
       summary: List repositories
       tags:
       - github
 securityDefinitions:
-  apiKey:
-    description: Type 'Bearer TOKEN' to correctly set the API Key
+  bearerToken:
     in: header
     name: Authorization
     type: apiKey

@@ -24,7 +24,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "apiKey": []
+                        "bearerToken": []
                     }
                 ],
                 "consumes": [
@@ -62,8 +62,7 @@ const docTemplate = `{
         }
     },
     "securityDefinitions": {
-        "apiKey": {
-            "description": "Type 'Bearer TOKEN' to correctly set the API Key",
+        "bearerToken": {
             "type": "apiKey",
             "name": "Authorization",
             "in": "header"
