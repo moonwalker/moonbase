@@ -24,10 +24,12 @@ import (
 // http://localhost:8080/login/github?returnURL=/login/github/authenticate
 
 const (
-	userCtxKey          = "user-token"
-	oauthStateSep       = "|"
-	retUrlCodeQuery int = 0
-	retUrlCodePath      = 1
+	userCtxKey              = "user-token"
+	oauthStateSep           = "|"
+	retUrlCodeQuery     int = 0
+	retUrlCodePath          = 1
+	codeTokenExpiresMin     = 1
+	userTokenExpiresMin     = 30
 )
 
 var (
@@ -134,7 +136,7 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func encryptAccessToken(accessToken string) (string, error) {
-	te, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, []byte(accessToken) /*data*/, 30)
+	te, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, []byte(accessToken), userTokenExpiresMin)
 	if err != nil {
 		return "", err
 	}
@@ -171,7 +173,7 @@ func returnURLWithCode(returnURL, code string, m int) (string, error) {
 		return "", err
 	}
 
-	codeJWT, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, []byte(code), 30)
+	codeToken, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, []byte(code), codeTokenExpiresMin)
 	if err != nil {
 		return "", err
 	}
@@ -179,10 +181,10 @@ func returnURLWithCode(returnURL, code string, m int) (string, error) {
 	switch {
 	case m == retUrlCodeQuery:
 		u.RawQuery = url.Values{
-			"code": {codeJWT},
+			"code": {codeToken},
 		}.Encode()
 	case m == retUrlCodePath:
-		u.Path = path.Join(u.Path, codeJWT)
+		u.Path = path.Join(u.Path, codeToken)
 	}
 
 	return u.String(), nil
