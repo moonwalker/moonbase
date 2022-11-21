@@ -2,10 +2,9 @@ FROM golang:alpine AS build
 WORKDIR /work
 COPY .git/ ./.git
 COPY go.mod go.sum ./
-COPY app ./app
 COPY cmd ./cmd
 COPY docs ./docs
-COPY pkg ./pkg
+COPY internal ./internal
 COPY vendor ./vendor
 RUN apk add --no-cache git
 RUN CGO_ENABLED=0 GOOS=linux go build -o moonbase ./cmd/moonbase
