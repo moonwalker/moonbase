@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -14,6 +15,10 @@ func docsRedirect(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+const (
+	loginBtnHtml = `<button id="loginbtn" class="btn" style="margin-right: 1em">Login</button>`
+)
+
 func docsHandler() http.HandlerFunc {
 	return httpSwagger.Handler(
 		httpSwagger.UIConfig(map[string]string{
@@ -23,18 +28,12 @@ func docsHandler() http.HandlerFunc {
 				}
 				return req
 			}`,
-			"onComplete": `() => {
-				const btn = document.createElement("button")
-				btn.innerText = "Login"
-				btn.className = "btn"
-				btn.style.marginRight = "1em"
-				btn.onclick = () => {
+			"onComplete": fmt.Sprintf(`() => {
+				document.querySelector(".auth-wrapper").insertAdjacentHTML("afterbegin", '%s')
+				document.querySelector("#loginbtn").addEventListener('click', () => {
 					window.open("/login/github?returnURL=/login/github/authenticate")
-				}
-				const authWrapper = document.querySelector(".auth-wrapper")
-				// authWrapper.style.cssText += 'justify-content: space-between'
-				authWrapper.insertBefore(btn, authWrapper.firstChild)
-			}`,
+				})
+			}`, loginBtnHtml),
 		}),
 	)
 }
