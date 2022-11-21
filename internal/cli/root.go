@@ -7,7 +7,7 @@ import (
 )
 
 var RootCmd = &cobra.Command{
-	Use:               "moonbase",
+	Use:               version.Name,
 	Short:             "Git-based headless CMS API",
 	Version:           version.ShortRev(),
 	CompletionOptions: cobra.CompletionOptions{DisableDefaultCmd: true},

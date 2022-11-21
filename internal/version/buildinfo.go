@@ -5,8 +5,13 @@ import (
 	"runtime/debug"
 )
 
+const (
+	Name      = "moonbase"
+	defCommit = "dev"
+)
+
 var (
-	commit = "dev"
+	commit = defCommit
 )
 
 func init() {
@@ -20,6 +25,10 @@ func init() {
 			commit = kv.Value
 		}
 	}
+}
+
+func IsDev() bool {
+	return ShortRev() == defCommit
 }
 
 func ShortRev() string {

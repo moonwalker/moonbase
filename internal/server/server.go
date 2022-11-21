@@ -3,7 +3,6 @@ package server
 import (
 	"compress/flate"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -39,8 +38,6 @@ func (s *Server) Listen() error {
 	r.Mount("/", api.Routes())
 
 	addr := fmt.Sprintf(":%d", s.Options.Port)
-	log.Printf("listen at port %s", addr)
-
 	return http.ListenAndServe(addr, r)
 }
 
