@@ -11,11 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    outputs:
+      gitrev: ${{ steps.gitparse.outputs.rev }}
     steps:
       - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy --remote-only
-      - run: echo "GITREV=`git rev-parse --short ${{ github.sha }}`" >> $GITHUB_ENV
+      - id: gitparse
+        run: echo "rev=`git rev-parse --short ${{ github.sha }}`" >> $GITHUB_OUTPUT
 
   notify:
     needs: [deploy]
@@ -34,11 +37,11 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "<${{ github.event.head_commit.url }}|moonbase/${{ job.deploy.env.GITREV }}> deployed to https://moonbase.mw.zone"
+                    "text": "new version <${{ github.event.head_commit.url }}|${{ needs.deploy.outputs.gitrev }}> landed on <https://moonbase.mw.zone/docs|moonbase>"
                   },
                   "accessory": {
                     "type": "image",
-                    "image_url": "https://moonbase.mw.zone/assets/moon_logo.png",
+                    "image_url": "https://moonbase.mw.zone/assets/logo.png",
                     "alt_text": "moonbase logo"
                   }
                 }

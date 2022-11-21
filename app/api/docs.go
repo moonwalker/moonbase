@@ -6,17 +6,14 @@ import (
 	"github.com/go-chi/chi"
 	httpSwagger "github.com/swaggo/http-swagger"
 
-	d "github.com/moonwalker/moonbase/docs"
-	"github.com/moonwalker/moonbase/pkg/version"
+	_ "github.com/moonwalker/moonbase/docs"
 )
 
 func docs() chi.Router {
 	r := chi.NewRouter()
 
-	d.SwaggerInfo.Version = version.ShortRev()
-
 	r.Use(docsRedirect())
-	r.Get("/*", httpSwagger.Handler())
+	r.HandleFunc("/*", httpSwagger.Handler())
 
 	return r
 }
