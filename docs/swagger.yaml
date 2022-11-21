@@ -32,7 +32,7 @@ paths:
       tags:
       - github
 securityDefinitions:
-  Bearer:
+  apiKey:
     description: Type 'Bearer TOKEN' to correctly set the API Key
     in: header
     name: Authorization

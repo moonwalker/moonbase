@@ -37,10 +37,8 @@ var (
 
 type User struct {
 	Login *string `json:"login,omitempty"`
-	Name  *string `json:"name,omitempty"`
-	Email *string `json:"email,omitempty"`
 	Image *string `json:"image,omitempty"`
-	Token string  `json:"token,omitempty"`
+	Token string  `json:"token"`
 }
 
 func githubConfig() *oauth2.Config {
@@ -120,8 +118,6 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 
 	usr := &User{
 		Login: ghUser.Login,
-		Name:  ghUser.Name,
-		Email: ghUser.Email,
 		Image: ghUser.AvatarURL,
 		Token: et,
 	}
