@@ -28,7 +28,11 @@ func docsHandler() http.HandlerFunc {
 				btn.onclick = function () {
 					window.open("/login/github?returnURL=/login/github/authenticate")
 				}
-				document.querySelector(".auth-wrapper").appendChild(btn)
+
+				const authWrapper = document.querySelector(".auth-wrapper")
+				authWrapper.style.cssText += 'justify-content: space-between'
+
+				authWrapper.insertBefore(btn, authWrapper.firstChild)
 			}`,
 		}),
 	)
