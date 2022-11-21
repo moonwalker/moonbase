@@ -2,21 +2,21 @@ package api
 
 import (
 	"embed"
-	"encoding/json"
 	"html/template"
 	"io/fs"
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/moonwalker/moonbase/internal/version"
+
+	"github.com/moonwalker/moonbase/internal/runtime"
 )
 
 const (
 	jsonContentType = "application/json"
 )
 
-type indexJson struct {
-	Server  string `json:"server"`
+type indexData struct {
+	Name    string `json:"name"`
 	Version string `json:"version"`
 }
 
@@ -41,7 +41,7 @@ func core() chi.Router {
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
-	response(w, r, "index.html", &indexJson{"moonbase", version.ShortRev()})
+	response(w, r, "index.html", &indexData{runtime.Name, runtime.ShortRev()})
 }
 
 func notFound(w http.ResponseWriter, r *http.Request) {
@@ -52,8 +52,7 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 func response(w http.ResponseWriter, r *http.Request, view string, data any) {
 	switch r.Header.Get("Content-type") {
 	case jsonContentType:
-		w.Header().Set("Content-Type", jsonContentType)
-		json.NewEncoder(w).Encode(data)
+		jsonEncode(w, data)
 	default:
 		t.ExecuteTemplate(w, view, data)
 	}

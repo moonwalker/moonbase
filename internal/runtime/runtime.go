@@ -1,4 +1,4 @@
-package version
+package runtime
 
 import (
 	"fmt"
@@ -6,12 +6,12 @@ import (
 )
 
 const (
-	Name      = "moonbase"
-	defCommit = "dev"
+	Name = "moonbase"
 )
 
 var (
-	commit = defCommit
+	dev    = true
+	commit = "dev"
 )
 
 func init() {
@@ -22,13 +22,14 @@ func init() {
 	for _, kv := range info.Settings {
 		switch kv.Key {
 		case "vcs.revision":
+			dev = false
 			commit = kv.Value
 		}
 	}
 }
 
 func IsDev() bool {
-	return ShortRev() == defCommit
+	return dev
 }
 
 func ShortRev() string {

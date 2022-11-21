@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -53,7 +52,7 @@ func githubConfig() *oauth2.Config {
 func githubAuth(w http.ResponseWriter, r *http.Request) {
 	state, err := encodeState(r)
 	if err != nil {
-		httpError(w, http.StatusInternalServerError, "failed to encode oauth state", err)
+		jsonError(w, http.StatusInternalServerError, "failed to encode oauth state", err)
 		return
 	}
 
@@ -64,14 +63,14 @@ func githubAuth(w http.ResponseWriter, r *http.Request) {
 func githubCallback(w http.ResponseWriter, r *http.Request) {
 	secret, returnURL := decodeState(r)
 	if secret != oauthStateSecret {
-		httpError(w, http.StatusInternalServerError, "invalid oauth state secret", fmt.Errorf("expected: %s, actual: %s", oauthStateSecret, secret))
+		jsonError(w, http.StatusInternalServerError, "invalid oauth state secret", fmt.Errorf("expected: %s, actual: %s", oauthStateSecret, secret))
 		return
 	}
 
 	code := r.FormValue("code")
 	url, err := returnURLWithCode(returnURL, code, retUrlCodeQuery)
 	if err != nil {
-		httpError(w, http.StatusInternalServerError, "failed to encrypt return url with oauth exchange code", err)
+		jsonError(w, http.StatusInternalServerError, "failed to encrypt return url with oauth exchange code", err)
 		return
 	}
 
@@ -84,21 +83,21 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 	if code == "" {
 		code = chi.URLParam(r, "code")
 		if code == "" {
-			httpError(w, http.StatusInternalServerError, "auth code missing", nil)
+			jsonError(w, http.StatusInternalServerError, "auth code missing", nil)
 			return
 		}
 	}
 
 	decoded, err := decryptExchangeCode(code)
 	if err != nil {
-		httpError(w, http.StatusInternalServerError, "failed to decrypt oauth exchange code", err)
+		jsonError(w, http.StatusInternalServerError, "failed to decrypt oauth exchange code", err)
 		return
 	}
 
 	githubConfig := githubConfig()
 	token, err := githubConfig.Exchange(oauth2.NoContext, decoded)
 	if err != nil {
-		httpError(w, http.StatusInternalServerError, "oauth exchange failed", err)
+		jsonError(w, http.StatusInternalServerError, "oauth exchange failed", err)
 		return
 	}
 
@@ -106,13 +105,13 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 	ghClient := github.NewClient(oauthClient)
 	ghUser, _, err := ghClient.Users.Get(context.Background(), "")
 	if err != nil {
-		httpError(w, http.StatusInternalServerError, "github client failed to get user", err)
+		jsonError(w, http.StatusInternalServerError, "github client failed to get user", err)
 		return
 	}
 
 	et, err := encryptAccessToken(token.AccessToken)
 	if err != nil {
-		httpError(w, http.StatusInternalServerError, "failed to encrypt token", err)
+		jsonError(w, http.StatusInternalServerError, "failed to encrypt token", err)
 		return
 	}
 
@@ -122,8 +121,7 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 		Token: et,
 	}
 
-	w.Header().Set("Content-Type", "text/json; charset=utf-8")
-	json.NewEncoder(w).Encode(usr)
+	jsonEncode(w, usr)
 }
 
 func encryptAccessToken(accessToken string) (string, error) {
@@ -200,19 +198,19 @@ func withUser(next http.Handler) http.Handler {
 			tokenString = bearer[7:]
 		}
 		if len(tokenString) == 0 {
-			httpError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), fmt.Errorf("no auth token"))
+			jsonError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), fmt.Errorf("no auth token"))
 			return
 		}
 
 		token, err := jwt.VerifyAndDecrypt(env.JweKey, env.JwtKey, tokenString)
 		if err != nil {
-			httpError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), err)
+			jsonError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), err)
 			return
 		}
 
 		authClaims, ok := token.Claims.(*jwt.AuthClaims)
 		if !ok {
-			httpError(w, http.StatusInternalServerError, "invalid auth claims type", nil)
+			jsonError(w, http.StatusInternalServerError, "invalid auth claims type", nil)
 			return
 		}
 

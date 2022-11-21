@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -50,7 +49,7 @@ func getRepositories(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	json.NewEncoder(w).Encode(repos)
+	jsonEncode(w, repos)
 }
 
 func getBranches(w http.ResponseWriter, r *http.Request) {
@@ -73,5 +72,5 @@ func getBranches(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	json.NewEncoder(w).Encode(bs)
+	jsonEncode(w, bs)
 }

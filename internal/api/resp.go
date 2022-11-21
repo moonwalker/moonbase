@@ -11,13 +11,17 @@ type Error struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func httpError(w http.ResponseWriter, code int, msg string, err error) {
+func jsonEncode(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
+	json.NewEncoder(w).Encode(v)
+}
+
+func jsonError(w http.ResponseWriter, code int, msg string, err error) {
 	w.WriteHeader(code)
 	var e string
 	if err != nil {
 		e = err.Error()
 	}
-	json.NewEncoder(w).Encode(Error{code, msg, e})
+	jsonEncode(w, &Error{code, msg, e})
 }

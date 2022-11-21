@@ -1,10 +1,13 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/moonwalker/moonbase/internal/env"
 	"github.com/moonwalker/moonbase/internal/log"
+	"github.com/moonwalker/moonbase/internal/runtime"
 	"github.com/moonwalker/moonbase/internal/server"
 )
 
@@ -25,7 +28,15 @@ func init() {
 }
 
 func serveCmdRun(command *cobra.Command, args []string) error {
-	log.Info().Int("port", httpPort).Msg("starting")
+	k := "port"
+	v := fmt.Sprintf("%d", httpPort)
+
+	if runtime.IsDev() {
+		k = "addr"
+		v = fmt.Sprintf("http://localhost:%d", httpPort)
+	}
+
+	log.Info().Str(k, v).Msg("running")
 	srv := server.NewServer(&server.Options{Port: httpPort})
 	return srv.Listen()
 }
