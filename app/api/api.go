@@ -11,6 +11,11 @@ import (
 
 // @license.name MIT
 // @license.url https://github.com/moonwalker/moonbase/blob/main/LICENSE
+
+// @securityDefinitions.apikey Bearer
+// @in header
+// @name Authorization
+// @description Type 'Bearer TOKEN' to correctly set the API Key
 func Routes() chi.Router {
 	r := chi.NewRouter()
 

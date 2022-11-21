@@ -55,7 +55,7 @@ func githubConfig() *oauth2.Config {
 func githubAuth(w http.ResponseWriter, r *http.Request) {
 	state, err := encodeState(r)
 	if err != nil {
-		httpError(w, -1, "failed to encode oauth state", err)
+		httpError(w, http.StatusInternalServerError, "failed to encode oauth state", err)
 		return
 	}
 
@@ -66,14 +66,14 @@ func githubAuth(w http.ResponseWriter, r *http.Request) {
 func githubCallback(w http.ResponseWriter, r *http.Request) {
 	secret, returnURL := decodeState(r)
 	if secret != oauthStateSecret {
-		httpError(w, -1, "invalid oauth state secret", fmt.Errorf("expected: %s, actual: %s", oauthStateSecret, secret))
+		httpError(w, http.StatusInternalServerError, "invalid oauth state secret", fmt.Errorf("expected: %s, actual: %s", oauthStateSecret, secret))
 		return
 	}
 
 	code := r.FormValue("code")
 	url, err := returnURLWithCode(returnURL, code, retUrlCodeQuery)
 	if err != nil {
-		httpError(w, -1, "failed to encrypt return url with oauth exchange code", err)
+		httpError(w, http.StatusInternalServerError, "failed to encrypt return url with oauth exchange code", err)
 		return
 	}
 
@@ -86,21 +86,21 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 	if code == "" {
 		code = chi.URLParam(r, "code")
 		if code == "" {
-			httpError(w, -1, "auth code missing", nil)
+			httpError(w, http.StatusInternalServerError, "auth code missing", nil)
 			return
 		}
 	}
 
 	decoded, err := decryptExchangeCode(code)
 	if err != nil {
-		httpError(w, -1, "failed to decrypt oauth exchange code", err)
+		httpError(w, http.StatusInternalServerError, "failed to decrypt oauth exchange code", err)
 		return
 	}
 
 	githubConfig := githubConfig()
 	token, err := githubConfig.Exchange(oauth2.NoContext, decoded)
 	if err != nil {
-		httpError(w, -1, "oauth exchange failed", err)
+		httpError(w, http.StatusInternalServerError, "oauth exchange failed", err)
 		return
 	}
 
@@ -108,13 +108,13 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 	ghClient := github.NewClient(oauthClient)
 	ghUser, _, err := ghClient.Users.Get(context.Background(), "")
 	if err != nil {
-		httpError(w, -1, "github client failed to get user", err)
+		httpError(w, http.StatusInternalServerError, "github client failed to get user", err)
 		return
 	}
 
 	et, err := encryptAccessToken(token.AccessToken)
 	if err != nil {
-		httpError(w, -1, "failed to encrypt token", err)
+		httpError(w, http.StatusInternalServerError, "failed to encrypt token", err)
 		return
 	}
 

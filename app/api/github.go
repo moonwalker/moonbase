@@ -20,6 +20,15 @@ func createClient(accessToken string) *github.Client {
 	return github.NewClient(tc)
 }
 
+// GetRepositories
+//
+//	@Summary	List repositories
+//	@Tags		github
+//	@Accept		json
+//	@Produce	json
+//	@Success	200	{array} listItem "ok"
+//	@Router		/list [get]
+//	@Security	ApiKeyAuth
 func getRepositories(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accessToken := ctx.Value(userCtxKey).(string)

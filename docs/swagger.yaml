@@ -1,3 +1,9 @@
+definitions:
+  api.listItem:
+    properties:
+      name:
+        type: string
+    type: object
 info:
   contact: {}
   description: Git-based headless CMS API.
@@ -6,5 +12,29 @@ info:
     url: https://github.com/moonwalker/moonbase/blob/main/LICENSE
   title: Moonbase API
   version: "1.0"
-paths: {}
+paths:
+  /list:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            items:
+              $ref: '#/definitions/api.listItem'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: List repositories
+      tags:
+      - github
+securityDefinitions:
+  Bearer:
+    description: Type 'Bearer TOKEN' to correctly set the API Key
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

@@ -14,7 +14,7 @@ type Error struct {
 func httpError(w http.ResponseWriter, code int, msg string, err error) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(http.StatusInternalServerError)
+	w.WriteHeader(code)
 	var e string
 	if err != nil {
 		e = err.Error()
