@@ -23,13 +23,12 @@ import (
 func Routes() chi.Router {
 	r := chi.NewRouter()
 
-	// index, 404, etc. (supports html and json)
+	// index, 404, etc.
 	r.Mount("/", core())
 
-	r.Get("/docs2/*", httpSwagger.Handler())
-
 	// swagger docs
-	r.Mount("/docs", docs())
+	r.Get("/docs", docsRedirect)
+	r.Get("/docs/*", httpSwagger.Handler())
 
 	// github login
 	r.Get("/login/github", githubAuth)

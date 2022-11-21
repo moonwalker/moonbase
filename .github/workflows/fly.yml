@@ -37,7 +37,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "new version <${{ github.event.head_commit.url }}|${{ needs.deploy.outputs.gitrev }}> landed on <https://moonbase.mw.zone/docs|moonbase>"
+                    "text": "new version <${{ github.event.head_commit.url }}|${{ needs.deploy.outputs.gitrev }}> landed on <https://moonbase.mw.zone|moonbase>"
                   }
                 }
               ]

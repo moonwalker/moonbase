@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="/assets/favicon.ico" />
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography,aspect-ratio"></script>
     <style>
         .moonbg {
             background-image: url("/assets/moonbg.jpg");
@@ -15,9 +15,10 @@
     </style>
 </head>
 <body class="bg-black moonbg">
-    <div class="h-screen flex items-center justify-center">
+    <div class="h-screen flex items-center justify-center text-center">
         <div class="prose">
             <h1 class="text-neutral-200 drop-shadow-lg">Moonbase</h1>
+            <h2 class="text-neutral-400 drop-shadow-md">{ {{.Version}} }</h2>
         </div>
     </div>
 </body>
