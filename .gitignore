@@ -1,2 +1,19 @@
+# ignore all
+*
+
+# unignore all dirs
+!*/
+
+# unignore all with extensions
+!*.*
+
+## above combination will ignore all files without extension (go binaries for example)
+
+# unignore necessary files
+!Makefile
+!Dockerfile
+!Earthfile
+
+# below are the usual ignores
 .DS_Store
 .env.local
