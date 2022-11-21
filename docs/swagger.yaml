@@ -27,7 +27,7 @@ paths:
               $ref: '#/definitions/api.listItem'
             type: array
       security:
-      - ApiKeyAuth: []
+      - apiKey: []
       summary: List repositories
       tags:
       - github

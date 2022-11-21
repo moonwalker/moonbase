@@ -15,7 +15,7 @@
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "apiKey": []
                     }
                 ],
                 "consumes": [

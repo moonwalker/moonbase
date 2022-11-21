@@ -69,7 +69,7 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := r.FormValue("code")
-	url, err := returnURLWithCode(returnURL, code, retUrlCodeQuery)
+	url, err := returnURLWithCode(returnURL, code, retUrlCodePath)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, "failed to encrypt return url with oauth exchange code", err)
 		return

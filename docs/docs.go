@@ -24,7 +24,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "apiKey": []
                     }
                 ],
                 "consumes": [
