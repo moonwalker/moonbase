@@ -21,6 +21,15 @@ func docsHandler() http.HandlerFunc {
 				req.headers['Authorization'] = 'Bearer ' + req.headers['Authorization']
 				return req
 			}`,
+			"onComplete": `() => {
+				const btn = document.createElement("button")
+				btn.innerHTML = "Login"
+				btn.className = "btn"
+				btn.onclick = function () {
+					window.open("/login/github?returnURL=/login/github/authenticate")
+				}
+				document.querySelector(".auth-wrapper").appendChild(btn)
+			}`,
 		}),
 	)
 }
