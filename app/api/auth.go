@@ -23,17 +23,13 @@ import (
 
 const (
 	oauthStateSeparator = "|"
+	USER_CTX_KEY        = "user-token"
 )
 
 var (
-	ghScopes         = []string{"user:email", "read:org"}
+	ghScopes         = []string{"user:email", "read:org", "repo"}
 	oauthStateSecret = xid.New().String()
 )
-
-type TokenData struct {
-	Login       string `json:"login"`
-	AccessToken string `json:"accessToken"`
-}
 
 type User struct {
 	Login *string `json:"login,omitempty"`
@@ -103,7 +99,7 @@ func authenticateCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	et, err := encryptAccessToken(ghUser, token.AccessToken)
+	et, err := encryptAccessToken(token.AccessToken)
 	if err != nil {
 		httpError(w, -1, "failed to encrypt token", err)
 		return
@@ -121,14 +117,8 @@ func authenticateCallback(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(usr)
 }
 
-func encryptAccessToken(user *github.User, accessToken string) (string, error) {
-	payload := &TokenData{Login: *user.Login, AccessToken: accessToken}
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return "", err
-	}
-
-	te, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, data, 30)
+func encryptAccessToken(accessToken string) (string, error) {
+	te, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, []byte(accessToken) /*data*/, 30)
 	if err != nil {
 		return "", err
 	}
@@ -168,4 +158,38 @@ func decryptExchangeCode(code string) (string, error) {
 	}
 
 	return string(token.Claims.(*jwt.AuthClaims).Data), nil
+}
+
+func withUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var tokenString string
+
+		// get token from authorization header
+		bearer := r.Header.Get("Authorization")
+		if len(bearer) > 7 && strings.ToUpper(bearer[0:6]) == "BEARER" {
+			tokenString = bearer[7:]
+		}
+		if len(tokenString) == 0 {
+			httpError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), fmt.Errorf("no auth token"))
+			return
+		}
+
+		token, err := jwt.VerifyAndDecrypt(env.JweKey, env.JwtKey, tokenString)
+		if err != nil {
+			httpError(w, http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), err)
+			return
+		}
+
+		authClaims, ok := token.Claims.(*jwt.AuthClaims)
+		if !ok {
+			httpError(w, http.StatusInternalServerError, "invalid auth claims type", nil)
+			return
+		}
+
+		// add auth claims to context
+		ctx := context.WithValue(r.Context(), USER_CTX_KEY, string(authClaims.Data))
+
+		// authenticated, pass it through
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
