@@ -24,9 +24,8 @@ func ghConfig() *oauth2.Config {
 }
 
 func ghClient(ctx context.Context, accessToken string) *github.Client {
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: accessToken})
-	tc := oauth2.NewClient(context.Background(), ts)
-	return github.NewClient(tc)
+	oauthClient := ghConfig().Client(ctx, &oauth2.Token{AccessToken: accessToken})
+	return github.NewClient(oauthClient)
 }
 
 func AuthCodeURL(state string) string {
@@ -42,8 +41,7 @@ func Exchange(code string) (string, error) {
 }
 
 func GetUser(ctx context.Context, accessToken string) (*github.User, error) {
-	oauthClient := ghConfig().Client(oauth2.NoContext, &oauth2.Token{AccessToken: accessToken})
-	ghClient := github.NewClient(oauthClient)
+	ghClient := ghClient(ctx, accessToken)
 	user, _, err := ghClient.Users.Get(ctx, "")
 	return user, err
 }
