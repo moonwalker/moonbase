@@ -152,11 +152,11 @@ func getTree(w http.ResponseWriter, r *http.Request) {
 // @Produce		json
 // @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
 // @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
-// @Param		branch			path	string	true	"branch name"
+// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
 // @Param		path			path	string	true	"contents path"
 // @Success		200	{object}	[]byte
 // @Failure		500	{object}	errorData
-// @Router		/repos/{owner}/{repo}/blob/{branch}/{path} [get]
+// @Router		/repos/{owner}/{repo}/blob/{ref}/{path} [get]
 // @Security	bearerToken
 func getBlob(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -164,10 +164,10 @@ func getBlob(w http.ResponseWriter, r *http.Request) {
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
-	branch := chi.URLParam(r, "branch")
+	ref := chi.URLParam(r, "ref")
 	path := chi.URLParam(r, "*")
 
-	blob, err := gh.GetBlobByPath(ctx, accessToken, owner, repo, branch, path)
+	blob, err := gh.GetBlobByPath(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
 		errClientFailGetBlob().Log(err).Json(w)
 		return

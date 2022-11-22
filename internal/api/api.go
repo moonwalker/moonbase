@@ -41,7 +41,7 @@ func Routes() chi.Router {
 		r.Get("/repos/{owner}/{repo}/branches", getBranches)
 		r.Get("/repos/{owner}/{repo}/tree/{branch}", getTree)
 		r.Get("/repos/{owner}/{repo}/tree/{branch}/*", getTree)
-		r.Get("/repos/{owner}/{repo}/blob/{branch}/*", getBlob)
+		r.Get("/repos/{owner}/{repo}/blob/{ref}/*", getBlob)
 	})
 
 	return r

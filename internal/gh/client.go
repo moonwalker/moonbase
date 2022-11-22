@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"net/url"
 
 	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
@@ -111,9 +112,9 @@ func GetTree(ctx context.Context, accessToken string, owner string, repo string,
 	return tree, nil
 }
 
-func GetBlobByPath(ctx context.Context, accessToken string, owner string, repo string, branch, path string) ([]byte, error) {
+func GetBlobByPath(ctx context.Context, accessToken string, owner string, repo string, ref, path string) ([]byte, error) {
 	githubClient := ghClient(ctx, accessToken)
-	blob, err := getBlobByPath(ctx, githubClient, owner, repo, branch, path)
+	blob, err := getBlobByPath(ctx, githubClient, owner, repo, ref, path)
 	if err != nil {
 		return nil, err
 	}
@@ -121,16 +122,16 @@ func GetBlobByPath(ctx context.Context, accessToken string, owner string, repo s
 }
 
 // helpers
-func getContentDir(ctx context.Context, githubClient *github.Client, owner string, repo string, branch string) (string, error) {
-	cfg, err := getCmsConfig(ctx, githubClient, owner, repo, branch)
+func getContentDir(ctx context.Context, githubClient *github.Client, owner string, repo string, ref string) (string, error) {
+	cfg, err := getCmsConfig(ctx, githubClient, owner, repo, ref)
 	if err != nil {
 		return "", err
 	}
 	return cfg.Content.Dir, nil
 }
 
-func getCmsConfig(ctx context.Context, githubClient *github.Client, owner string, repo string, branch string) (*cmsConfig, error) {
-	config, err := getBlobByPath(ctx, githubClient, owner, repo, branch, configYamlPath)
+func getCmsConfig(ctx context.Context, githubClient *github.Client, owner string, repo string, ref string) (*cmsConfig, error) {
+	config, err := getBlobByPath(ctx, githubClient, owner, repo, ref, configYamlPath)
 	if err != nil {
 		return nil, err
 	}
@@ -144,12 +145,19 @@ func getCmsConfig(ctx context.Context, githubClient *github.Client, owner string
 	return cfg, nil
 }
 
-func getBlobByPath(ctx context.Context, githubClient *github.Client, owner string, repo string, branch string, path string) ([]byte, error) {
+func getBlobByPath(ctx context.Context, githubClient *github.Client, owner string, repo string, ref string, path string) ([]byte, error) {
 	if len(path) == 0 {
-		return nil, errors.New("No path provided")
+		return nil, errors.New("no path provided")
 	}
 
-	fc, _, _, err := githubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{})
+	decodedPath, err := url.QueryUnescape(path)
+	if err != nil {
+		return nil, err
+	}
+
+	fc, _, _, err := githubClient.Repositories.GetContents(ctx, owner, repo, decodedPath, &github.RepositoryContentGetOptions{
+		Ref: ref,
+	})
 	if err != nil {
 		return nil, err
 	}

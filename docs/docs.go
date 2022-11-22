@@ -20,7 +20,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/repos/{owner}/{repo}/blob/{branch}/{path}": {
+        "/repos/{owner}/{repo}/blob/{ref}/{path}": {
             "get": {
                 "security": [
                     {
@@ -54,8 +54,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "branch name",
-                        "name": "branch",
+                        "description": "git ref (branch, tag, sha)",
+                        "name": "ref",
                         "in": "path",
                         "required": true
                     },

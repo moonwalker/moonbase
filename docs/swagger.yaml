@@ -82,7 +82,7 @@ paths:
       summary: List branhces
       tags:
       - branches
-  /repos/{owner}/{repo}/blob/{branch}/{path}:
+  /repos/{owner}/{repo}/blob/{ref}/{path}:
     get:
       consumes:
       - application/json
@@ -97,9 +97,9 @@ paths:
         name: repo
         required: true
         type: string
-      - description: branch name
+      - description: git ref (branch, tag, sha)
         in: path
-        name: branch
+        name: ref
         required: true
         type: string
       - description: contents path
