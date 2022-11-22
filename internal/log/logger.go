@@ -9,16 +9,18 @@ import (
 	"github.com/moonwalker/moonbase/internal/runtime"
 )
 
+var (
+	devLogger  = zlog.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	liveLogger = zlog.With().Str("name", runtime.Name).Str("version", runtime.ShortRev()).Logger()
+)
+
 func init() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
 	if runtime.IsDev() {
-		zlog.Logger = zlog.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+		zlog.Logger = devLogger
 	} else {
-		zlog.Logger = zlog.With().
-			Str("name", runtime.Name).
-			Str("version", runtime.ShortRev()).
-			Logger()
+		zlog.Logger = liveLogger
 	}
 }
 
