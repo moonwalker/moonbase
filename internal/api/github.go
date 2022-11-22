@@ -2,20 +2,26 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi"
 
 	"github.com/moonwalker/moonbase/internal/gh"
 )
 
-type branchItem struct {
-	Name *string `json:"name"`
-	SHA  *string `json:"sha"`
+type repositoryList struct {
+	LastPage int               `json:"lastPage"`
+	Items    []*repositoryItem `json:"items"`
 }
 
 type repositoryItem struct {
 	Name  *string `json:"name"`
 	Owner *string `json:"owner"`
+}
+
+type branchItem struct {
+	Name *string `json:"name"`
+	SHA  *string `json:"sha"`
 }
 
 type treeItem struct {
@@ -28,32 +34,43 @@ const (
 	configYamlPath = "moonbase.yaml"
 )
 
-// @Summary	List repositories
-// @Tags		github
+// @Summary		List repositories
+// @Tags		repositories
 // @Accept		json
-// @Produce	json
-// @Success	200	{array} listItem "ok"
+// @Produce		json
+// @Param		page			query	string	false	"page of results to retrieve (default: `1`)"
+// @Param		perPage			query	string	false	"number of results to include per page (default: `30`)"
+// @Param		sort			query	string	false	"how to sort the repository list, can be one of `created`, `updated`, `pushed`, `full_name` (default: `full_name`)"
+// @Param		direction		query	string	false	"direction in which to sort repositories, can be one of `asc` or `desc` (default when using `full_name`: `asc`; otherwise: `desc`)"
+// @Success		200	{object}	repositoryList
+// @Failure		500	{object}	errorData
 // @Router		/list [get]
 // @Security	bearerToken
 func getRepositories(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accessToken := ctx.Value(userCtxKey).(string)
 
-	grs, err := gh.ListRepositories(ctx, accessToken, 100, 1)
+	page, _ := strconv.Atoi(r.FormValue("page"))
+	perPage, _ := strconv.Atoi(r.FormValue("perPage"))
+	sort := r.FormValue("sort")
+	direction := r.FormValue("direction")
+
+	grs, lastPage, err := gh.ListRepositories(ctx, accessToken, page, perPage, sort, direction)
 	if err != nil {
 		errClientFailGetRepositories().Log(err).Json(w)
 		return
 	}
 
-	repos := make([]*repositoryItem, 0)
+	repoItems := make([]*repositoryItem, 0)
 	for _, gr := range grs {
-		repos = append(repos, &repositoryItem{
+		repoItems = append(repoItems, &repositoryItem{
 			Name:  gr.Name,
 			Owner: gr.Owner.Login,
 		})
 	}
 
-	jsonResponse(w, http.StatusOK, repos)
+	repoList := &repositoryList{LastPage: lastPage, Items: repoItems}
+	jsonResponse(w, http.StatusOK, repoList)
 }
 
 func getBranches(w http.ResponseWriter, r *http.Request) {

@@ -34,17 +34,46 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "github"
+                    "repositories"
                 ],
                 "summary": "List repositories",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page of results to retrieve (default: ` + "`" + `1` + "`" + `)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "number of results to include per page (default: ` + "`" + `30` + "`" + `)",
+                        "name": "perPage",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "how to sort the repository list, can be one of ` + "`" + `created` + "`" + `, ` + "`" + `updated` + "`" + `, ` + "`" + `pushed` + "`" + `, ` + "`" + `full_name` + "`" + ` (default: ` + "`" + `full_name` + "`" + `)",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "direction in which to sort repositories, can be one of ` + "`" + `asc` + "`" + ` or ` + "`" + `desc` + "`" + ` (default when using ` + "`" + `full_name` + "`" + `: ` + "`" + `asc` + "`" + `; otherwise: ` + "`" + `desc` + "`" + `)",
+                        "name": "direction",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "ok",
+                        "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.listItem"
-                            }
+                            "$ref": "#/definitions/api.repositoryList"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorData"
                         }
                     }
                 }
@@ -52,11 +81,45 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "api.listItem": {
+        "api.errorData": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.repositoryItem": {
             "type": "object",
             "properties": {
                 "name": {
                     "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.repositoryList": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.repositoryItem"
+                    }
+                },
+                "lastPage": {
+                    "type": "integer"
                 }
             }
         }

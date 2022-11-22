@@ -46,14 +46,16 @@ func GetUser(ctx context.Context, accessToken string) (*github.User, error) {
 	return user, err
 }
 
-func ListRepositories(ctx context.Context, accessToken string, page, perPage int) ([]*github.Repository, error) {
-	repos, _, err := ghClient(ctx, accessToken).Repositories.List(ctx, "", &github.RepositoryListOptions{
+func ListRepositories(ctx context.Context, accessToken string, page, perPage int, sort, direction string) ([]*github.Repository, int, error) {
+	repos, resp, err := ghClient(ctx, accessToken).Repositories.List(ctx, "", &github.RepositoryListOptions{
+		Sort:      sort,
+		Direction: direction,
 		ListOptions: github.ListOptions{
-			PerPage: page,
-			Page:    perPage,
+			Page:    page,
+			PerPage: perPage,
 		},
 	})
-	return repos, err
+	return repos, resp.LastPage, err
 }
 
 func ListBranches(ctx context.Context, accessToken string, owner, repo string) ([]*github.Branch, error) {

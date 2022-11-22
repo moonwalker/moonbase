@@ -1,8 +1,30 @@
 definitions:
-  api.listItem:
+  api.errorData:
+    properties:
+      code:
+        type: string
+      id:
+        type: string
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+  api.repositoryItem:
     properties:
       name:
         type: string
+      owner:
+        type: string
+    type: object
+  api.repositoryList:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/api.repositoryItem'
+        type: array
+      lastPage:
+        type: integer
     type: object
 info:
   contact: {}
@@ -17,20 +39,41 @@ paths:
     get:
       consumes:
       - application/json
+      parameters:
+      - description: 'page of results to retrieve (default: `1`)'
+        in: query
+        name: page
+        type: string
+      - description: 'number of results to include per page (default: `30`)'
+        in: query
+        name: perPage
+        type: string
+      - description: 'how to sort the repository list, can be one of `created`, `updated`,
+          `pushed`, `full_name` (default: `full_name`)'
+        in: query
+        name: sort
+        type: string
+      - description: 'direction in which to sort repositories, can be one of `asc`
+          or `desc` (default when using `full_name`: `asc`; otherwise: `desc`)'
+        in: query
+        name: direction
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: ok
+          description: OK
           schema:
-            items:
-              $ref: '#/definitions/api.listItem'
-            type: array
+            $ref: '#/definitions/api.repositoryList'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorData'
       security:
       - bearerToken: []
       summary: List repositories
       tags:
-      - github
+      - repositories
 securityDefinitions:
   bearerToken:
     in: header

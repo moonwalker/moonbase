@@ -22,6 +22,7 @@ const (
 func docsHandler() http.HandlerFunc {
 	return httpSwagger.Handler(
 		httpSwagger.UIConfig(map[string]string{
+			"persistAuthorization": "true",
 			"requestInterceptor": `(req) => {
 				if (req.headers['Authorization']) {
 					req.headers['Authorization'] = 'Bearer ' + req.headers['Authorization']
