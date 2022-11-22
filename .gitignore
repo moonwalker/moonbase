@@ -16,4 +16,5 @@
 
 # below are the usual ignores
 .DS_Store
+.env
 .env.local
