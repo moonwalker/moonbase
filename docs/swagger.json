@@ -69,9 +69,78 @@
                     }
                 }
             }
+        },
+        "/{owner}/{repo}/branches": {
+            "get": {
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "branches"
+                ],
+                "summary": "List branhces",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the name of the repository (the name is not case sensitive)",
+                        "name": "owner",
+                        "in": "path"
+                    },
+                    {
+                        "type": "string",
+                        "description": "the account owner of the repository (the name is not case sensitive)",
+                        "name": "repo",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.branchList"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorData"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "api.branchItem": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "sha": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.branchList": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.branchItem"
+                    }
+                }
+            }
+        },
         "api.errorData": {
             "type": "object",
             "properties": {

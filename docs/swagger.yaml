@@ -1,4 +1,18 @@
 definitions:
+  api.branchItem:
+    properties:
+      name:
+        type: string
+      sha:
+        type: string
+    type: object
+  api.branchList:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/api.branchItem'
+        type: array
+    type: object
   api.errorData:
     properties:
       code:
@@ -35,6 +49,35 @@ info:
   title: Moonbase API
   version: "1.0"
 paths:
+  /{owner}/{repo}/branches:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: the name of the repository (the name is not case sensitive)
+        in: path
+        name: owner
+        type: string
+      - description: the account owner of the repository (the name is not case sensitive)
+        in: path
+        name: repo
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.branchList'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorData'
+      security:
+      - bearerToken: []
+      summary: List branhces
+      tags:
+      - branches
   /list:
     get:
       consumes:
