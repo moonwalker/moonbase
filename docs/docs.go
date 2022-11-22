@@ -47,7 +47,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "number of results to include per page (default: ` + "`" + `30` + "`" + `)",
-                        "name": "perPage",
+                        "name": "perpage",
                         "in": "query"
                     },
                     {
