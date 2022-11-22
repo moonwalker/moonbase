@@ -51,20 +51,28 @@ info:
   title: Moonbase API
   version: "1.0"
 paths:
-  /{owner}/{repo}/branches:
+  /repos:
     get:
       consumes:
       - application/json
       parameters:
-      - description: the account owner of the repository (the name is not case sensitive)
-        in: path
-        name: owner
-        required: true
+      - description: 'page of results to retrieve (default: `1`)'
+        in: query
+        name: page
         type: string
-      - description: the name of the repository (the name is not case sensitive)
-        in: path
-        name: repo
-        required: true
+      - description: 'number of results to include per page (default: `30`)'
+        in: query
+        name: per_page
+        type: string
+      - description: 'how to sort the repository list, can be one of `created`, `updated`,
+          `pushed`, `full_name` (default: `full_name`)'
+        in: query
+        name: sort
+        type: string
+      - description: 'direction in which to sort repositories, can be one of `asc`
+          or `desc` (default when using `full_name`: `asc`; otherwise: `desc`)'
+        in: query
+        name: direction
         type: string
       produces:
       - application/json
@@ -72,16 +80,16 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.branchList'
+            $ref: '#/definitions/api.repositoryList'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.errorData'
       security:
       - bearerToken: []
-      summary: List branhces
+      summary: Get repositories
       tags:
-      - branches
+      - repos
   /repos/{owner}/{repo}/blob/{ref}/{path}:
     get:
       consumes:
@@ -124,29 +132,21 @@ paths:
       - bearerToken: []
       summary: Get blob
       tags:
-      - contents
-  /user/repos:
+      - repos
+  /repos/{owner}/{repo}/branches:
     get:
       consumes:
       - application/json
       parameters:
-      - description: 'page of results to retrieve (default: `1`)'
-        in: query
-        name: page
+      - description: the account owner of the repository (the name is not case sensitive)
+        in: path
+        name: owner
+        required: true
         type: string
-      - description: 'number of results to include per page (default: `30`)'
-        in: query
-        name: per_page
-        type: string
-      - description: 'how to sort the repository list, can be one of `created`, `updated`,
-          `pushed`, `full_name` (default: `full_name`)'
-        in: query
-        name: sort
-        type: string
-      - description: 'direction in which to sort repositories, can be one of `asc`
-          or `desc` (default when using `full_name`: `asc`; otherwise: `desc`)'
-        in: query
-        name: direction
+      - description: the name of the repository (the name is not case sensitive)
+        in: path
+        name: repo
+        required: true
         type: string
       produces:
       - application/json
@@ -154,16 +154,59 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.repositoryList'
+            $ref: '#/definitions/api.branchList'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.errorData'
       security:
       - bearerToken: []
-      summary: List repositories
+      summary: Get branhces
       tags:
-      - repositories
+      - repos
+  /repos/{owner}/{repo}/tree/{ref}/{path}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: the account owner of the repository (the name is not case sensitive)
+        in: path
+        name: owner
+        required: true
+        type: string
+      - description: the name of the repository (the name is not case sensitive)
+        in: path
+        name: repo
+        required: true
+        type: string
+      - description: git ref (branch, tag, sha)
+        in: path
+        name: ref
+        required: true
+        type: string
+      - description: tree path
+        in: path
+        name: path
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: integer
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorData'
+      security:
+      - bearerToken: []
+      summary: Get tree
+      tags:
+      - repos
 securityDefinitions:
   bearerToken:
     in: header

@@ -20,6 +20,65 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/repos": {
+            "get": {
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "repos"
+                ],
+                "summary": "Get repositories",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "page of results to retrieve (default: ` + "`" + `1` + "`" + `)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "number of results to include per page (default: ` + "`" + `30` + "`" + `)",
+                        "name": "per_page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "how to sort the repository list, can be one of ` + "`" + `created` + "`" + `, ` + "`" + `updated` + "`" + `, ` + "`" + `pushed` + "`" + `, ` + "`" + `full_name` + "`" + ` (default: ` + "`" + `full_name` + "`" + `)",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "direction in which to sort repositories, can be one of ` + "`" + `asc` + "`" + ` or ` + "`" + `desc` + "`" + ` (default when using ` + "`" + `full_name` + "`" + `: ` + "`" + `asc` + "`" + `; otherwise: ` + "`" + `desc` + "`" + `)",
+                        "name": "direction",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.repositoryList"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorData"
+                        }
+                    }
+                }
+            }
+        },
         "/repos/{owner}/{repo}/blob/{ref}/{path}": {
             "get": {
                 "security": [
@@ -34,7 +93,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "contents"
+                    "repos"
                 ],
                 "summary": "Get blob",
                 "parameters": [
@@ -86,7 +145,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/repos": {
+        "/repos/{owner}/{repo}/branches": {
             "get": {
                 "security": [
                     {
@@ -100,68 +159,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "repositories"
+                    "repos"
                 ],
-                "summary": "List repositories",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "page of results to retrieve (default: ` + "`" + `1` + "`" + `)",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "number of results to include per page (default: ` + "`" + `30` + "`" + `)",
-                        "name": "per_page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "how to sort the repository list, can be one of ` + "`" + `created` + "`" + `, ` + "`" + `updated` + "`" + `, ` + "`" + `pushed` + "`" + `, ` + "`" + `full_name` + "`" + ` (default: ` + "`" + `full_name` + "`" + `)",
-                        "name": "sort",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "direction in which to sort repositories, can be one of ` + "`" + `asc` + "`" + ` or ` + "`" + `desc` + "`" + ` (default when using ` + "`" + `full_name` + "`" + `: ` + "`" + `asc` + "`" + `; otherwise: ` + "`" + `desc` + "`" + `)",
-                        "name": "direction",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.repositoryList"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/api.errorData"
-                        }
-                    }
-                }
-            }
-        },
-        "/{owner}/{repo}/branches": {
-            "get": {
-                "security": [
-                    {
-                        "bearerToken": []
-                    }
-                ],
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "branches"
-                ],
-                "summary": "List branhces",
+                "summary": "Get branhces",
                 "parameters": [
                     {
                         "type": "string",
@@ -183,6 +183,72 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/api.branchList"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorData"
+                        }
+                    }
+                }
+            }
+        },
+        "/repos/{owner}/{repo}/tree/{ref}/{path}": {
+            "get": {
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "repos"
+                ],
+                "summary": "Get tree",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the account owner of the repository (the name is not case sensitive)",
+                        "name": "owner",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the name of the repository (the name is not case sensitive)",
+                        "name": "repo",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "git ref (branch, tag, sha)",
+                        "name": "ref",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "tree path",
+                        "name": "path",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
                         }
                     },
                     "500": {

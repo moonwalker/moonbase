@@ -41,8 +41,8 @@ const (
 	configYamlPath = "moonbase.yaml"
 )
 
-// @Summary		List repositories
-// @Tags		repositories
+// @Summary		Get repositories
+// @Tags		repos
 // @Accept		json
 // @Produce		json
 // @Param		page			query	string	false	"page of results to retrieve (default: `1`)"
@@ -51,7 +51,7 @@ const (
 // @Param		direction		query	string	false	"direction in which to sort repositories, can be one of `asc` or `desc` (default when using `full_name`: `asc`; otherwise: `desc`)"
 // @Success		200	{object}	repositoryList
 // @Failure		500	{object}	errorData
-// @Router		/user/repos [get]
+// @Router		/repos [get]
 // @Security	bearerToken
 func getRepositories(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -81,15 +81,15 @@ func getRepositories(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusOK, repoList)
 }
 
-// @Summary		List branhces
-// @Tags		branches
+// @Summary		Get branhces
+// @Tags		repos
 // @Accept		json
 // @Produce		json
 // @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
 // @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
 // @Success		200	{object}	branchList
 // @Failure		500	{object}	errorData
-// @Router		/{owner}/{repo}/branches [get]
+// @Router		/repos/{owner}/{repo}/branches [get]
 // @Security	bearerToken
 func getBranches(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -119,16 +119,28 @@ func getBranches(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusOK, branchList)
 }
 
+// @Summary		Get tree
+// @Tags		repos
+// @Accept		json
+// @Produce		json
+// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
+// @Param		path			path	string	true	"tree path"
+// @Success		200	{object}	[]byte
+// @Failure		500	{object}	errorData
+// @Router		/repos/{owner}/{repo}/tree/{ref}/{path} [get]
+// @Security	bearerToken
 func getTree(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accessToken := ctx.Value(userCtxKey).(string)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
-	branch := chi.URLParam(r, "branch")
+	ref := chi.URLParam(r, "ref")
 	path := chi.URLParam(r, "*")
 
-	tree, err := gh.GetTree(ctx, accessToken, owner, repo, branch, path)
+	tree, err := gh.GetTree(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
 		errClientFailGetTree().Log(err).Json(w)
 		return
@@ -147,7 +159,7 @@ func getTree(w http.ResponseWriter, r *http.Request) {
 }
 
 // @Summary		Get blob
-// @Tags		contents
+// @Tags		repos
 // @Accept		json
 // @Produce		json
 // @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"

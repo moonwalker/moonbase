@@ -37,10 +37,10 @@ func Routes() chi.Router {
 	// api routes which needs authenticated user token
 	r.Group(func(r chi.Router) {
 		r.Use(withUser)
-		r.Get("/user/repos", getRepositories)
+		r.Get("/repos", getRepositories)
 		r.Get("/repos/{owner}/{repo}/branches", getBranches)
-		r.Get("/repos/{owner}/{repo}/tree/{branch}", getTree)
-		r.Get("/repos/{owner}/{repo}/tree/{branch}/*", getTree)
+		r.Get("/repos/{owner}/{repo}/tree/{ref}", getTree)
+		r.Get("/repos/{owner}/{repo}/tree/{ref}/*", getTree)
 		r.Get("/repos/{owner}/{repo}/blob/{ref}/*", getBlob)
 	})
 
