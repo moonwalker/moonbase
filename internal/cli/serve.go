@@ -15,7 +15,7 @@ var (
 	httpPort int
 	serveCmd = &cobra.Command{
 		Use:          "serve",
-		Short:        "Run the Moonbase server",
+		Short:        "Run moonbase server",
 		RunE:         serveCmdRun,
 		SilenceUsage: true,
 	}

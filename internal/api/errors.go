@@ -10,9 +10,9 @@ import (
 )
 
 var (
-	errorMessages = map[int]string{
-		1000: "auth token not provided",
-		1001: "unauthorized",
+	errMsg = map[int]string{
+		1000: "unauthorized",
+		1001: "auth token not provided",
 		1002: "invalid auth claims type",
 		1003: "failed to encode oauth state",
 		1004: "invalid oauth state secret",
@@ -23,8 +23,8 @@ var (
 		1009: "github client failed to get user",
 		1010: "failed to encrypt token",
 	}
-	errNoAuthToken        = func() *errorData { return makeError(401, 1000) }
-	errUnauthorized       = func() *errorData { return makeError(401, 1001) }
+	errUnauthorized       = func() *errorData { return makeError(401, 1000) }
+	errNoAuthToken        = func() *errorData { return makeError(401, 1001) }
 	errInvalidAuthClaims  = func() *errorData { return makeError(500, 1002) }
 	errFailEncOAuthState  = func() *errorData { return makeError(500, 1003) }
 	errInvalidOAuthSecret = func() *errorData { return makeError(500, 1004) }
@@ -37,7 +37,7 @@ var (
 )
 
 func makeError(statusCode, errorCode int) *errorData {
-	return &errorData{xid.New().String(), strconv.Itoa(statusCode), strconv.Itoa(errorCode), errorMessages[errorCode]}
+	return &errorData{xid.New().String(), strconv.Itoa(statusCode), strconv.Itoa(errorCode), errMsg[errorCode]}
 }
 
 type errorData struct {
