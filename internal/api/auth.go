@@ -74,7 +74,7 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := r.FormValue("code")
-	url, err := returnURLWithCode(returnURL, code, retUrlCodeQuery)
+	url, err := returnURLWithCode(returnURL, code, retUrlCodePath)
 	if err != nil {
 		log.Error(err).Msg(errFailedEncRetURL.Message)
 		jsonResponse(w, http.StatusInternalServerError, errFailedEncRetURL)
