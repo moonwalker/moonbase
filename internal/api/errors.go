@@ -24,6 +24,7 @@ var (
 		1010: "failed to encrypt token",
 		1011: "github client failed to get repositories",
 		1012: "github client failed to get branches",
+		1013: "github client failed to get tree",
 	}
 	errUnauthorized              = func() *errorData { return makeError(401, 1000) }
 	errNoAuthToken               = func() *errorData { return makeError(401, 1001) }
@@ -38,6 +39,7 @@ var (
 	errFailEncAccessToken        = func() *errorData { return makeError(500, 1010) }
 	errClientFailGetRepositories = func() *errorData { return makeError(500, 1011) }
 	errClientFailGetBranches     = func() *errorData { return makeError(500, 1012) }
+	errClientFailGetTree         = func() *errorData { return makeError(500, 1013) }
 )
 
 func makeError(statusCode, errorCode int) *errorData {

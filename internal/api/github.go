@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-chi/chi"
 
+	"encoding/json"
+
 	"github.com/moonwalker/moonbase/internal/gh"
 )
 
@@ -17,6 +19,10 @@ type repositoryList struct {
 type repositoryItem struct {
 	Name  *string `json:"name"`
 	Owner *string `json:"owner"`
+}
+
+type branchList struct {
+	Items []*branchItem `json:"items"`
 }
 
 type branchItem struct {
@@ -73,6 +79,16 @@ func getRepositories(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusOK, repoList)
 }
 
+// @Summary		List branhces
+// @Tags		branches
+// @Accept		json
+// @Produce		json
+// @Param		owner			path	string	false	"the name of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	false	"the account owner of the repository (the name is not case sensitive)"
+// @Success		200	{object}	branchList
+// @Failure		500	{object}	errorData
+// @Router		/{owner}/{repo}/branches [get]
+// @Security	bearerToken
 func getBranches(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accessToken := ctx.Value(userCtxKey).(string)
@@ -85,16 +101,43 @@ func getBranches(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bs := make([]*branchItem, 0)
+	branchItems := make([]*branchItem, 0)
 	for _, br := range branches {
-		bi := branchItem{
+		branchItem := branchItem{
 			Name: br.Name,
 		}
 		if br.Commit != nil {
-			bi.SHA = br.Commit.SHA
+			branchItem.SHA = br.Commit.SHA
 		}
-		bs = append(bs, &bi)
+		branchItems = append(branchItems, &branchItem)
 	}
 
-	jsonResponse(w, http.StatusOK, bs)
+	branchList := &branchList{Items: branchItems}
+	jsonResponse(w, http.StatusOK, branchList)
+}
+
+func getTree(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	accessToken := ctx.Value(userCtxKey).(string)
+	owner := chi.URLParam(r, "owner")
+	repo := chi.URLParam(r, "repo")
+	branch := chi.URLParam(r, "branch")
+	sha := chi.URLParam(r, "sha")
+
+	tree, err := gh.GetTree(ctx, accessToken, owner, repo, branch, sha)
+	if err != nil {
+		errClientFailGetTree().Log(err).Json(w)
+		return
+	}
+
+	treeItems := make([]*treeItem, 0)
+	for _, te := range tree.Entries {
+		treeItems = append(treeItems, &treeItem{
+			Name: te.Path,
+			Type: te.Type,
+			SHA:  te.SHA,
+		})
+	}
+
+	json.NewEncoder(w).Encode(treeItems)
 }
