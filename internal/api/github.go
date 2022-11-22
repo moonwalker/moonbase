@@ -39,7 +39,7 @@ const (
 // @Accept		json
 // @Produce		json
 // @Param		page			query	string	false	"page of results to retrieve (default: `1`)"
-// @Param		perpage			query	string	false	"number of results to include per page (default: `30`)"
+// @Param		per_page		query	string	false	"number of results to include per page (default: `30`)"
 // @Param		sort			query	string	false	"how to sort the repository list, can be one of `created`, `updated`, `pushed`, `full_name` (default: `full_name`)"
 // @Param		direction		query	string	false	"direction in which to sort repositories, can be one of `asc` or `desc` (default when using `full_name`: `asc`; otherwise: `desc`)"
 // @Success		200	{object}	repositoryList
@@ -51,11 +51,11 @@ func getRepositories(w http.ResponseWriter, r *http.Request) {
 	accessToken := ctx.Value(userCtxKey).(string)
 
 	page, _ := strconv.Atoi(r.FormValue("page"))
-	perpage, _ := strconv.Atoi(r.FormValue("perpage"))
+	perPage, _ := strconv.Atoi(r.FormValue("per_page"))
 	sort := r.FormValue("sort")
 	direction := r.FormValue("direction")
 
-	grs, lastPage, err := gh.ListRepositories(ctx, accessToken, page, perpage, sort, direction)
+	grs, lastPage, err := gh.ListRepositories(ctx, accessToken, page, perPage, sort, direction)
 	if err != nil {
 		errClientFailGetRepositories().Log(err).Json(w)
 		return
