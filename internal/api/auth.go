@@ -10,12 +10,10 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
-	"github.com/google/go-github/v48/github"
 	"github.com/rs/xid"
-	"golang.org/x/oauth2"
-	githuboauth "golang.org/x/oauth2/github"
 
 	"github.com/moonwalker/moonbase/internal/env"
+	"github.com/moonwalker/moonbase/internal/gh"
 	"github.com/moonwalker/moonbase/internal/jwt"
 )
 
@@ -32,7 +30,6 @@ const (
 )
 
 var (
-	ghScopes         = []string{"user:email", "read:org", "repo"}
 	oauthStateSecret = xid.New().String()
 )
 
@@ -42,15 +39,6 @@ type User struct {
 	Token string  `json:"token"`
 }
 
-func githubConfig() *oauth2.Config {
-	return &oauth2.Config{
-		Scopes:       ghScopes,
-		Endpoint:     githuboauth.Endpoint,
-		ClientID:     env.GithubClientID,
-		ClientSecret: env.GithubClientSecret,
-	}
-}
-
 func githubAuth(w http.ResponseWriter, r *http.Request) {
 	state, err := encodeState(r)
 	if err != nil {
@@ -58,7 +46,7 @@ func githubAuth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url := githubConfig().AuthCodeURL(state, oauth2.AccessTypeOnline)
+	url := gh.AuthCodeURL(state)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
@@ -97,22 +85,19 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	githubConfig := githubConfig()
-	token, err := githubConfig.Exchange(oauth2.NoContext, decoded)
+	token, err := gh.Exchange(decoded)
 	if err != nil {
 		errFailOAuthExchange().Log(err).Json(w)
 		return
 	}
 
-	oauthClient := githubConfig.Client(oauth2.NoContext, token)
-	ghClient := github.NewClient(oauthClient)
-	ghUser, _, err := ghClient.Users.Get(context.Background(), "")
+	ghUser, err := gh.GetUser(r.Context(), token)
 	if err != nil {
 		errClientFailGetUser().Log(err).Json(w)
 		return
 	}
 
-	et, err := encryptAccessToken(token.AccessToken)
+	et, err := encryptAccessToken(token)
 	if err != nil {
 		errFailEncAccessToken().Log(err).Json(w)
 		return
