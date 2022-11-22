@@ -111,6 +111,15 @@ func GetTree(ctx context.Context, accessToken string, owner string, repo string,
 	return tree, nil
 }
 
+func GetBlobByPath(ctx context.Context, accessToken string, owner string, repo string, branch, path string) ([]byte, error) {
+	githubClient := ghClient(ctx, accessToken)
+	blob, err := getBlobByPath(ctx, githubClient, owner, repo, branch, path)
+	if err != nil {
+		return nil, err
+	}
+	return blob, nil
+}
+
 // helpers
 func getContentDir(ctx context.Context, githubClient *github.Client, owner string, repo string, branch string) (string, error) {
 	cfg, err := getCmsConfig(ctx, githubClient, owner, repo, branch)

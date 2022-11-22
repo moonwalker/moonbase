@@ -51,7 +51,7 @@ const (
 // @Param		direction		query	string	false	"direction in which to sort repositories, can be one of `asc` or `desc` (default when using `full_name`: `asc`; otherwise: `desc`)"
 // @Success		200	{object}	repositoryList
 // @Failure		500	{object}	errorData
-// @Router		/list [get]
+// @Router		/user/repos [get]
 // @Security	bearerToken
 func getRepositories(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -85,8 +85,8 @@ func getRepositories(w http.ResponseWriter, r *http.Request) {
 // @Tags		branches
 // @Accept		json
 // @Produce		json
-// @Param		owner			path	string	false	"the account owner of the repository (the name is not case sensitive)"
-// @Param		repo			path	string	false	"the name of the repository (the name is not case sensitive)"
+// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
 // @Success		200	{object}	branchList
 // @Failure		500	{object}	errorData
 // @Router		/{owner}/{repo}/branches [get]
@@ -94,6 +94,7 @@ func getRepositories(w http.ResponseWriter, r *http.Request) {
 func getBranches(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accessToken := ctx.Value(userCtxKey).(string)
+
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
 
@@ -121,12 +122,13 @@ func getBranches(w http.ResponseWriter, r *http.Request) {
 func getTree(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accessToken := ctx.Value(userCtxKey).(string)
+
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
 	branch := chi.URLParam(r, "branch")
-	sha := chi.URLParam(r, "sha")
+	path := chi.URLParam(r, "*")
 
-	tree, err := gh.GetTree(ctx, accessToken, owner, repo, branch, sha)
+	tree, err := gh.GetTree(ctx, accessToken, owner, repo, branch, path)
 	if err != nil {
 		errClientFailGetTree().Log(err).Json(w)
 		return
@@ -142,4 +144,39 @@ func getTree(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(treeItems)
+}
+
+// @Summary		Get blob
+// @Tags		contents
+// @Accept		json
+// @Produce		json
+// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
+// @Param		branch			path	string	true	"branch name"
+// @Param		path			path	string	true	"contents path"
+// @Success		200	{object}	[]byte
+// @Failure		500	{object}	errorData
+// @Router		/repos/{owner}/{repo}/blob/{branch}/{path} [get]
+// @Security	bearerToken
+func getBlob(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	accessToken := ctx.Value(userCtxKey).(string)
+
+	owner := chi.URLParam(r, "owner")
+	repo := chi.URLParam(r, "repo")
+	branch := chi.URLParam(r, "branch")
+	path := chi.URLParam(r, "*")
+
+	blob, err := gh.GetBlobByPath(ctx, accessToken, owner, repo, branch, path)
+	if err != nil {
+		errClientFailGetBlob().Log(err).Json(w)
+		return
+	}
+
+	data := struct {
+		Contents []byte `json:"contents"`
+	}{
+		blob,
+	}
+	json.NewEncoder(w).Encode(data)
 }
