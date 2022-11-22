@@ -83,8 +83,8 @@ func getRepositories(w http.ResponseWriter, r *http.Request) {
 // @Tags		branches
 // @Accept		json
 // @Produce		json
-// @Param		owner			path	string	false	"the name of the repository (the name is not case sensitive)"
-// @Param		repo			path	string	false	"the account owner of the repository (the name is not case sensitive)"
+// @Param		owner			path	string	false	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	false	"the name of the repository (the name is not case sensitive)"
 // @Success		200	{object}	branchList
 // @Failure		500	{object}	errorData
 // @Router		/{owner}/{repo}/branches [get]
