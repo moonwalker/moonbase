@@ -28,7 +28,7 @@ definitions:
     type: object
 info:
   contact: {}
-  description: Git-based headless CMS API.
+  description: '### Git-based headless CMS API.'
   license:
     name: MIT
     url: https://github.com/moonwalker/moonbase/blob/main/LICENSE
@@ -46,7 +46,7 @@ paths:
         type: string
       - description: 'number of results to include per page (default: `30`)'
         in: query
-        name: perpage
+        name: per_page
         type: string
       - description: 'how to sort the repository list, can be one of `created`, `updated`,
           `pushed`, `full_name` (default: `full_name`)'

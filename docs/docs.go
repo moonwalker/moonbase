@@ -47,7 +47,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "number of results to include per page (default: ` + "`" + `30` + "`" + `)",
-                        "name": "perpage",
+                        "name": "per_page",
                         "in": "query"
                     },
                     {
@@ -140,7 +140,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "Moonbase API",
-	Description:      "Git-based headless CMS API.",
+	Description:      "### Git-based headless CMS API.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 }

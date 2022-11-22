@@ -6,7 +6,8 @@ import (
 
 	httpSwagger "github.com/swaggo/http-swagger"
 
-	_ "github.com/moonwalker/moonbase/docs"
+	d "github.com/moonwalker/moonbase/docs"
+	"github.com/moonwalker/moonbase/internal/runtime"
 )
 
 func docsRedirect(w http.ResponseWriter, r *http.Request) {
@@ -20,6 +21,7 @@ const (
 )
 
 func docsHandler() http.HandlerFunc {
+	d.SwaggerInfo.Description += fmt.Sprintf("\nRevision: ```%s```", runtime.ShortRev())
 	return httpSwagger.Handler(
 		httpSwagger.UIConfig(map[string]string{
 			"persistAuthorization": "true",

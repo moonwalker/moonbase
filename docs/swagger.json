@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Git-based headless CMS API.",
+        "description": "### Git-based headless CMS API.",
         "title": "Moonbase API",
         "contact": {},
         "license": {
@@ -38,7 +38,7 @@
                     {
                         "type": "string",
                         "description": "number of results to include per page (default: `30`)",
-                        "name": "perpage",
+                        "name": "per_page",
                         "in": "query"
                     },
                     {
