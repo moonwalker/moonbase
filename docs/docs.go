@@ -99,13 +99,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "the name of the repository (the name is not case sensitive)",
+                        "description": "the account owner of the repository (the name is not case sensitive)",
                         "name": "owner",
                         "in": "path"
                     },
                     {
                         "type": "string",
-                        "description": "the account owner of the repository (the name is not case sensitive)",
+                        "description": "the name of the repository (the name is not case sensitive)",
                         "name": "repo",
                         "in": "path"
                     }

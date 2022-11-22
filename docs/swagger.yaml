@@ -54,11 +54,11 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: the name of the repository (the name is not case sensitive)
+      - description: the account owner of the repository (the name is not case sensitive)
         in: path
         name: owner
         type: string
-      - description: the account owner of the repository (the name is not case sensitive)
+      - description: the name of the repository (the name is not case sensitive)
         in: path
         name: repo
         type: string
