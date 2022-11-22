@@ -39,6 +39,8 @@ func Routes() chi.Router {
 		r.Use(withUser)
 		r.Get("/list", getRepositories)
 		r.Get("/{owner}/{repo}/branches", getBranches)
+		r.Get("/{owner}/{repo}/tree/{branch}", getTree)
+		r.Get("/{owner}/{repo}/tree/{branch}/{sha}", getTree)
 	})
 
 	return r
