@@ -50,6 +50,7 @@ func response(w http.ResponseWriter, r *http.Request, statusCode int, view strin
 	if strings.Contains(ct, "application/json") {
 		jsonResponse(w, statusCode, data)
 	} else {
+		w.WriteHeader(statusCode)
 		t.ExecuteTemplate(w, view, data)
 	}
 }
