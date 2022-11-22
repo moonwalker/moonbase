@@ -42,7 +42,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 }
 
 func notFound(w http.ResponseWriter, r *http.Request) {
-	response(w, r, http.StatusNotFound, "404.html", &errorData{Code: http.StatusNotFound, Message: http.StatusText(http.StatusNotFound)})
+	response(w, r, http.StatusNotFound, "404.html", &errorData{Status: "404", Message: http.StatusText(http.StatusNotFound)})
 }
 
 func response(w http.ResponseWriter, r *http.Request, statusCode int, view string, data any) {

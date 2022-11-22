@@ -1,20 +1,59 @@
 package api
 
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/rs/xid"
+
+	"github.com/moonwalker/moonbase/internal/log"
+)
+
+var (
+	errorMessages = map[int]string{
+		1000: "auth token not provided",
+		1001: "unauthorized",
+		1002: "invalid auth claims type",
+		1003: "failed to encode oauth state",
+		1004: "invalid oauth state secret",
+		1005: "failed to encrypt return url with oauth exchange code",
+		1006: "auth code missing",
+		1007: "failed to decrypt oauth exchange code",
+		1008: "oauth exchange failed",
+		1009: "github client failed to get user",
+		1010: "failed to encrypt token",
+	}
+	errNoAuthToken        = func() *errorData { return makeError(401, 1000) }
+	errUnauthorized       = func() *errorData { return makeError(401, 1001) }
+	errInvalidAuthClaims  = func() *errorData { return makeError(500, 1002) }
+	errFailEncOAuthState  = func() *errorData { return makeError(500, 1003) }
+	errInvalidOAuthSecret = func() *errorData { return makeError(500, 1004) }
+	errFailedEncRetURL    = func() *errorData { return makeError(500, 1005) }
+	errAuthCodeMissing    = func() *errorData { return makeError(500, 1006) }
+	errFailDecOAuthCode   = func() *errorData { return makeError(500, 1007) }
+	errFailOAuthExchange  = func() *errorData { return makeError(500, 1008) }
+	errClientFailGetUser  = func() *errorData { return makeError(500, 1009) }
+	errFailEncAccessToken = func() *errorData { return makeError(500, 1010) }
+)
+
+func makeError(statusCode, errorCode int) *errorData {
+	return &errorData{xid.New().String(), strconv.Itoa(statusCode), strconv.Itoa(errorCode), errorMessages[errorCode]}
+}
+
 type errorData struct {
-	Code    int    `json:"code"`
+	ID      string `json:"id,omitempty"`
+	Status  string `json:"status"`
+	Code    string `json:"code,omitempty"`
 	Message string `json:"message"`
 }
 
-var (
-	errNoAuthToken        = &errorData{1001, "auth token not provided"}
-	errUnauthorized       = &errorData{1002, "unauthorized"}
-	errInvalidAuthClaims  = &errorData{1003, "invalid auth claims type"}
-	errFailEncOAuthState  = &errorData{1004, "failed to encode oauth state"}
-	errInvalidOAuthSecret = &errorData{1005, "invalid oauth state secret"}
-	errFailedEncRetURL    = &errorData{1006, "failed to encrypt return url with oauth exchange code"}
-	errAuthCodeMissing    = &errorData{1007, "auth code missing"}
-	errFailDecOAuthCode   = &errorData{1008, "failed to decrypt oauth exchange code"}
-	errFailOAuthExchange  = &errorData{1009, "oauth exchange failed"}
-	errClientFailGetUser  = &errorData{1010, "github client failed to get user"}
-	errFailEncAccessToken = &errorData{1011, "failed to encrypt token"}
-)
+func (e *errorData) Json(w http.ResponseWriter) *errorData {
+	status, _ := strconv.Atoi(e.Status)
+	jsonResponse(w, status, e)
+	return e
+}
+
+func (e *errorData) Log(err error) *errorData {
+	log.Error(err).Str("id", e.ID).Msg(e.Message)
+	return e
+}

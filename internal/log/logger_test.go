@@ -14,4 +14,6 @@ func TestLoggerMethods(t *testing.T) {
 
 	zlog.Logger = liveLogger
 	Error(err).Msg(msg)
+
+	Error(nil).Msg("")
 }

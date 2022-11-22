@@ -17,7 +17,6 @@ import (
 
 	"github.com/moonwalker/moonbase/internal/env"
 	"github.com/moonwalker/moonbase/internal/jwt"
-	"github.com/moonwalker/moonbase/internal/log"
 )
 
 // testing the flow:
@@ -55,8 +54,7 @@ func githubConfig() *oauth2.Config {
 func githubAuth(w http.ResponseWriter, r *http.Request) {
 	state, err := encodeState(r)
 	if err != nil {
-		log.Error(err)
-		jsonResponse(w, http.StatusInternalServerError, errFailEncOAuthState)
+		errFailEncOAuthState().Log(err).Json(w)
 		return
 	}
 
@@ -68,16 +66,14 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 	secret, returnURL := decodeState(r)
 	if secret != oauthStateSecret {
 		err := fmt.Errorf("expected: %s actual: %s", oauthStateSecret, secret)
-		log.Error(err).Msg(errInvalidOAuthSecret.Message)
-		jsonResponse(w, http.StatusInternalServerError, errInvalidOAuthSecret)
+		errInvalidOAuthSecret().Log(err).Json(w)
 		return
 	}
 
 	code := r.FormValue("code")
 	url, err := returnURLWithCode(returnURL, code, retUrlCodePath)
 	if err != nil {
-		log.Error(err).Msg(errFailedEncRetURL.Message)
-		jsonResponse(w, http.StatusInternalServerError, errFailedEncRetURL)
+		errFailedEncRetURL().Log(err).Json(w)
 		return
 	}
 
@@ -97,16 +93,14 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 
 	decoded, err := decryptExchangeCode(code)
 	if err != nil {
-		log.Error(err).Msg(errFailDecOAuthCode.Message)
-		jsonResponse(w, http.StatusInternalServerError, errFailDecOAuthCode)
+		errFailDecOAuthCode().Log(err).Json(w)
 		return
 	}
 
 	githubConfig := githubConfig()
 	token, err := githubConfig.Exchange(oauth2.NoContext, decoded)
 	if err != nil {
-		log.Error(err).Msg(errFailOAuthExchange.Message)
-		jsonResponse(w, http.StatusInternalServerError, errFailOAuthExchange)
+		errFailOAuthExchange().Log(err).Json(w)
 		return
 	}
 
@@ -114,15 +108,13 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 	ghClient := github.NewClient(oauthClient)
 	ghUser, _, err := ghClient.Users.Get(context.Background(), "")
 	if err != nil {
-		log.Error(err).Msg(errClientFailGetUser.Message)
-		jsonResponse(w, http.StatusInternalServerError, errClientFailGetUser)
+		errClientFailGetUser().Log(err).Json(w)
 		return
 	}
 
 	et, err := encryptAccessToken(token.AccessToken)
 	if err != nil {
-		log.Error(err).Msg(errFailEncAccessToken.Message)
-		jsonResponse(w, http.StatusInternalServerError, errFailEncAccessToken)
+		errFailEncAccessToken().Log(err).Json(w)
 		return
 	}
 
@@ -209,19 +201,19 @@ func withUser(next http.Handler) http.Handler {
 			tokenString = bearer[7:]
 		}
 		if len(tokenString) == 0 {
-			jsonResponse(w, http.StatusUnauthorized, errNoAuthToken)
+			errNoAuthToken().Json(w)
 			return
 		}
 
 		token, err := jwt.VerifyAndDecrypt(env.JweKey, env.JwtKey, tokenString)
 		if err != nil {
-			jsonResponse(w, http.StatusUnauthorized, errUnauthorized)
+			errUnauthorized().Json(w)
 			return
 		}
 
 		authClaims, ok := token.Claims.(*jwt.AuthClaims)
 		if !ok {
-			jsonResponse(w, http.StatusInternalServerError, errInvalidAuthClaims)
+			errInvalidAuthClaims().Json(w)
 			return
 		}
 
