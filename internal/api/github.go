@@ -17,8 +17,9 @@ type repositoryList struct {
 }
 
 type repositoryItem struct {
-	Name  *string `json:"name"`
-	Owner *string `json:"owner"`
+	Name          *string `json:"name"`
+	Owner         *string `json:"owner"`
+	DefaultBranch *string `json:"defaultBranch"`
 }
 
 type branchList struct {
@@ -70,8 +71,9 @@ func getRepositories(w http.ResponseWriter, r *http.Request) {
 	repoItems := make([]*repositoryItem, 0)
 	for _, gr := range grs {
 		repoItems = append(repoItems, &repositoryItem{
-			Name:  gr.Name,
-			Owner: gr.Owner.Login,
+			Name:          gr.Name,
+			Owner:         gr.Owner.Login,
+			DefaultBranch: gr.DefaultBranch,
 		})
 	}
 

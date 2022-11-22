@@ -26,6 +26,8 @@ definitions:
     type: object
   api.repositoryItem:
     properties:
+      defaultBranch:
+        type: string
       name:
         type: string
       owner:

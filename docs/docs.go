@@ -170,6 +170,9 @@ const docTemplate = `{
         "api.repositoryItem": {
             "type": "object",
             "properties": {
+                "defaultBranch": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
