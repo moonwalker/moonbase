@@ -22,18 +22,22 @@ var (
 		1008: "oauth exchange failed",
 		1009: "github client failed to get user",
 		1010: "failed to encrypt token",
+		1011: "github client failed to get repositories",
+		1012: "github client failed to get branches",
 	}
-	errUnauthorized       = func() *errorData { return makeError(401, 1000) }
-	errNoAuthToken        = func() *errorData { return makeError(401, 1001) }
-	errInvalidAuthClaims  = func() *errorData { return makeError(500, 1002) }
-	errFailEncOAuthState  = func() *errorData { return makeError(500, 1003) }
-	errInvalidOAuthSecret = func() *errorData { return makeError(500, 1004) }
-	errFailedEncRetURL    = func() *errorData { return makeError(500, 1005) }
-	errAuthCodeMissing    = func() *errorData { return makeError(500, 1006) }
-	errFailDecOAuthCode   = func() *errorData { return makeError(500, 1007) }
-	errFailOAuthExchange  = func() *errorData { return makeError(500, 1008) }
-	errClientFailGetUser  = func() *errorData { return makeError(500, 1009) }
-	errFailEncAccessToken = func() *errorData { return makeError(500, 1010) }
+	errUnauthorized              = func() *errorData { return makeError(401, 1000) }
+	errNoAuthToken               = func() *errorData { return makeError(401, 1001) }
+	errInvalidAuthClaims         = func() *errorData { return makeError(500, 1002) }
+	errFailEncOAuthState         = func() *errorData { return makeError(500, 1003) }
+	errInvalidOAuthSecret        = func() *errorData { return makeError(500, 1004) }
+	errFailedEncRetURL           = func() *errorData { return makeError(500, 1005) }
+	errAuthCodeMissing           = func() *errorData { return makeError(500, 1006) }
+	errFailDecOAuthCode          = func() *errorData { return makeError(500, 1007) }
+	errFailOAuthExchange         = func() *errorData { return makeError(500, 1008) }
+	errClientFailGetUser         = func() *errorData { return makeError(500, 1009) }
+	errFailEncAccessToken        = func() *errorData { return makeError(500, 1010) }
+	errClientFailGetRepositories = func() *errorData { return makeError(500, 1011) }
+	errClientFailGetBranches     = func() *errorData { return makeError(500, 1012) }
 )
 
 func makeError(statusCode, errorCode int) *errorData {
