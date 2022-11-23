@@ -33,6 +33,7 @@ type branchItem struct {
 
 type treeItem struct {
 	Name *string `json:"name"`
+	Path *string `json:"path"`
 	Type *string `json:"type"`
 	SHA  *string `json:"sha"`
 }
@@ -144,18 +145,19 @@ func getTree(w http.ResponseWriter, r *http.Request) {
 	ref := chi.URLParam(r, "ref")
 	path := chi.URLParam(r, "*")
 
-	tree, err := gh.GetTree(ctx, accessToken, owner, repo, ref, path)
+	repoContents, err := gh.GetTree(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
 		errClientFailGetTree().Log(err).Json(w)
 		return
 	}
 
 	treeItems := make([]*treeItem, 0)
-	for _, te := range tree.Entries {
+	for _, rc := range repoContents {
 		treeItems = append(treeItems, &treeItem{
-			Name: te.Path,
-			Type: te.Type,
-			SHA:  te.SHA,
+			Name: rc.Name,
+			Path: rc.Path,
+			Type: rc.Type,
+			SHA:  rc.SHA,
 		})
 	}
 

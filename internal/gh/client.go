@@ -76,40 +76,16 @@ func ListBranches(ctx context.Context, accessToken string, owner, repo string) (
 	return branches, err
 }
 
-func GetTree(ctx context.Context, accessToken string, owner string, repo string, branch string, sha string) (*github.Tree, error) {
+func GetTree(ctx context.Context, accessToken string, owner string, repo string, branch string, path string) ([]*github.RepositoryContent, error) {
 	githubClient := ghClient(ctx, accessToken)
-
-	// get branch's base ref
-	if len(sha) == 0 {
-		baseRef, _, err := githubClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+branch)
-		if err != nil {
-			return nil, err
-		}
-		sha = *baseRef.Object.SHA
-
-		contentDir, err := getContentDir(ctx, githubClient, owner, repo, branch)
-		if contentDir != "" {
-			contentTree, _, err := githubClient.Git.GetTree(ctx, owner, repo, sha, false)
-			if err != nil {
-				return nil, err
-			}
-
-			for _, cti := range contentTree.Entries {
-				if *cti.Type == "tree" && *cti.Path == contentDir {
-					sha = *cti.SHA
-					break
-				}
-			}
-		}
-	}
-
-	// get tree
-	tree, _, err := githubClient.Git.GetTree(ctx, owner, repo, sha, false)
+	_, rc, _, err := githubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
+		Ref: branch,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	return tree, nil
+	return rc, nil
 }
 
 func GetBlobByPath(ctx context.Context, accessToken string, owner string, repo string, ref, path string) ([]byte, error) {
