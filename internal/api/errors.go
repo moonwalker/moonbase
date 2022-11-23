@@ -38,10 +38,10 @@ var (
 	errFailOAuthExchange         = func() *errorData { return makeError(500, 1008) }
 	errClientFailGetUser         = func() *errorData { return makeError(500, 1009) }
 	errFailEncAccessToken        = func() *errorData { return makeError(500, 1010) }
-	errClientFailGetRepositories = func() *errorData { return makeError(500, 1011) }
-	errClientFailGetBranches     = func() *errorData { return makeError(500, 1012) }
-	errClientFailGetTree         = func() *errorData { return makeError(500, 1013) }
-	errClientFailGetBlob         = func() *errorData { return makeError(500, 1014) }
+	errClientFailGetRepositories = func() *errorData { return makeError(404, 1011) }
+	errClientFailGetBranches     = func() *errorData { return makeError(404, 1012) }
+	errClientFailGetTree         = func() *errorData { return makeError(404, 1013) }
+	errClientFailGetBlob         = func() *errorData { return makeError(404, 1014) }
 )
 
 func makeError(statusCode, errorCode int) *errorData {
