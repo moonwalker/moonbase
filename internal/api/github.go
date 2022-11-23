@@ -145,17 +145,14 @@ func getTree(w http.ResponseWriter, r *http.Request) {
 	path := chi.URLParam(r, "*")
 
 	data, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, contentConfigPath)
-	if err != nil {
-		errClientFailGetBlob().Log(err).Json(w)
-		return
-	}
-
-	contentConfig, ok := content.ParseConfig(contentConfigPath, data)
-	if ok {
-		// path should be in allowed content dir if any
-		// also limit to allowed file types (see content.ext)
-		// otherwise we give a 404 to the user
-		println(contentConfig.Content.Dir)
+	if err == nil {
+		contentConfig, ok := content.ParseConfig(contentConfigPath, data)
+		if ok {
+			// path should be in allowed content dir if any
+			// also limit to allowed file types (see content.ext)
+			// otherwise we give a 404 to the user
+			println(contentConfig.Content.Dir)
+		}
 	}
 
 	repoContents, err := gh.GetTree(ctx, accessToken, owner, repo, ref, path)
