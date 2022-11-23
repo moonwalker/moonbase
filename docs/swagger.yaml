@@ -20,6 +20,17 @@ definitions:
           $ref: '#/definitions/api.branchItem'
         type: array
     type: object
+  api.commitPayload:
+    properties:
+      contents:
+        items:
+          type: integer
+        type: array
+      email:
+        type: string
+      user:
+        type: string
+    type: object
   api.errorData:
     properties:
       code:
@@ -142,33 +153,15 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: the account owner of the repository (the name is not case sensitive)
-        in: path
-        name: owner
+      - description: commit payload
+        in: body
+        name: payload
         required: true
-        type: string
-      - description: the name of the repository (the name is not case sensitive)
-        in: path
-        name: repo
-        required: true
-        type: string
-      - description: git ref (branch, tag, sha)
-        in: path
-        name: ref
-        required: true
-        type: string
-      - description: contents path
-        in: path
-        name: path
-        required: true
-        type: string
-      produces:
-      - application/json
+        schema:
+          $ref: '#/definitions/api.commitPayload'
       responses:
         "200":
           description: OK
-          schema:
-            $ref: '#/definitions/api.blobEntry'
         "500":
           description: Internal Server Error
           schema:

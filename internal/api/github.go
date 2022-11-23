@@ -224,12 +224,8 @@ func getBlob(w http.ResponseWriter, r *http.Request) {
 // @Summary		Commit blob
 // @Tags		repos
 // @Accept		json
-// @Produce		json
-// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
-// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
-// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
-// @Param		path			path	string	true	"contents path"
-// @Success		200	{object}	blobEntry
+// @Param		payload			body	commitPayload	true	"commit payload"
+// @Success		200
 // @Failure		500	{object}	errorData
 // @Router		/repos/{owner}/{repo}/blob/{ref}/{path} [post]
 // @Security	bearerToken

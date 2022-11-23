@@ -150,49 +150,24 @@ const docTemplate = `{
                 "consumes": [
                     "application/json"
                 ],
-                "produces": [
-                    "application/json"
-                ],
                 "tags": [
                     "repos"
                 ],
                 "summary": "Commit blob",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "the account owner of the repository (the name is not case sensitive)",
-                        "name": "owner",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "the name of the repository (the name is not case sensitive)",
-                        "name": "repo",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "git ref (branch, tag, sha)",
-                        "name": "ref",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "contents path",
-                        "name": "path",
-                        "in": "path",
-                        "required": true
+                        "description": "commit payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.commitPayload"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.blobEntry"
-                        }
+                        "description": "OK"
                     },
                     "500": {
                         "description": "Internal Server Error",
@@ -350,6 +325,23 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/api.branchItem"
                     }
+                }
+            }
+        },
+        "api.commitPayload": {
+            "type": "object",
+            "properties": {
+                "contents": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "email": {
+                    "type": "string"
+                },
+                "user": {
+                    "type": "string"
                 }
             }
         },
