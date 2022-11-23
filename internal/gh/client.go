@@ -132,17 +132,16 @@ func getCommitTree(ctx context.Context, githubClient *github.Client, owner strin
 	return tree, err
 }
 
-// pushCommit creates the commit in the given reference using the given tree.
+// pushCommit creates the commit in the given reference using the given tree
 func pushCommit(ctx context.Context, githubClient *github.Client, ref *github.Reference, tree *github.Tree, owner string, repo string, user string, email string) (err error) {
-	// Get the parent commit to attach the commit to.
+	// Get the parent commit
 	parent, _, err := githubClient.Repositories.GetCommit(ctx, owner, repo, *ref.Object.SHA, nil)
 	if err != nil {
 		return err
 	}
-	// This is not always populated, but is needed.
 	parent.Commit.SHA = parent.SHA
 
-	// Create the commit using the tree.
+	// Create the commit using the tree
 	date := time.Now()
 	commitMessage := fmt.Sprintf("%s commit", user)
 	author := &github.CommitAuthor{Date: &date, Name: &user, Email: &email}
@@ -153,7 +152,7 @@ func pushCommit(ctx context.Context, githubClient *github.Client, ref *github.Re
 		return err
 	}
 
-	// Attach the commit to the master branch.
+	// Attach the commit to the branch
 	ref.Object.SHA = newCommit.SHA
 	_, _, err = githubClient.Git.UpdateRef(ctx, owner, repo, ref, false)
 	return err

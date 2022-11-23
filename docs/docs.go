@@ -140,6 +140,42 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "repos"
+                ],
+                "summary": "Commit blob",
+                "parameters": [
+                    {
+                        "description": "commit payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.commitPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorData"
+                        }
+                    }
+                }
             }
         },
         "/repos/{owner}/{repo}/branches": {
@@ -289,6 +325,23 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/api.branchItem"
                     }
+                }
+            }
+        },
+        "api.commitPayload": {
+            "type": "object",
+            "properties": {
+                "contents": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "email": {
+                    "type": "string"
+                },
+                "user": {
+                    "type": "string"
                 }
             }
         },
