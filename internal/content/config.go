@@ -8,13 +8,14 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type CmsConfig struct {
+type ContentConfig struct {
 	Content struct {
-		Dir string `json:"dir"`
+		Dir string   `json:"dir"`
+		Ext []string `json:"ext"`
 	} `json:"content"`
 }
 
-func ParseConfig(path string, data []byte) (*CmsConfig, bool) {
+func ParseConfig(path string, data []byte) (*ContentConfig, bool) {
 	config, err := unmarshalConfig(path, data)
 	if err != nil {
 		// log error
@@ -23,17 +24,17 @@ func ParseConfig(path string, data []byte) (*CmsConfig, bool) {
 	return config, true
 }
 
-func unmarshalConfig(path string, data []byte) (*CmsConfig, error) {
+func unmarshalConfig(path string, data []byte) (*ContentConfig, error) {
 	switch filepath.Ext(path) {
 	case ".yaml":
-		cfg := &CmsConfig{}
+		cfg := &ContentConfig{}
 		err := yaml.Unmarshal(data, cfg)
 		if err != nil {
 			return nil, err
 		}
 		return cfg, nil
 	case ".json":
-		cfg := &CmsConfig{}
+		cfg := &ContentConfig{}
 		err := json.Unmarshal(data, cfg)
 		if err != nil {
 			return nil, err
