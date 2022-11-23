@@ -130,7 +130,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.bloblEntry"
+                            "$ref": "#/definitions/api.blobEntry"
                         }
                     },
                     "500": {
@@ -259,7 +259,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "api.bloblEntry": {
+        "api.blobEntry": {
             "type": "object",
             "properties": {
                 "contents": {

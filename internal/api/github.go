@@ -37,7 +37,7 @@ type treeItem struct {
 	SHA  *string `json:"sha"`
 }
 
-type bloblEntry struct {
+type blobEntry struct {
 	Contents []byte `json:"contents"`
 }
 
@@ -170,7 +170,7 @@ func getTree(w http.ResponseWriter, r *http.Request) {
 // @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
 // @Param		ref				path	string	true	"git ref (branch, tag, sha)"
 // @Param		path			path	string	true	"contents path"
-// @Success		200	{object}	bloblEntry
+// @Success		200	{object}	blobEntry
 // @Failure		500	{object}	errorData
 // @Router		/repos/{owner}/{repo}/blob/{ref}/{path} [get]
 // @Security	bearerToken
@@ -189,6 +189,6 @@ func getBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := &bloblEntry{blob}
+	data := &blobEntry{blob}
 	json.NewEncoder(w).Encode(data)
 }

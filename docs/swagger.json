@@ -121,7 +121,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.bloblEntry"
+                            "$ref": "#/definitions/api.blobEntry"
                         }
                     },
                     "500": {
@@ -250,7 +250,7 @@
         }
     },
     "definitions": {
-        "api.bloblEntry": {
+        "api.blobEntry": {
             "type": "object",
             "properties": {
                 "contents": {
