@@ -144,7 +144,7 @@ func getTree(w http.ResponseWriter, r *http.Request) {
 	ref := chi.URLParam(r, "ref")
 	path := chi.URLParam(r, "*")
 
-	data, err := gh.GetBlobByPath(ctx, accessToken, owner, repo, ref, contentConfigPath)
+	data, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, contentConfigPath)
 	if err != nil {
 		errClientFailGetBlob().Log(err).Json(w)
 		return
@@ -196,7 +196,7 @@ func getBlob(w http.ResponseWriter, r *http.Request) {
 	ref := chi.URLParam(r, "ref")
 	path := chi.URLParam(r, "*")
 
-	blob, err := gh.GetBlobByPath(ctx, accessToken, owner, repo, ref, path)
+	blob, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
 		errClientFailGetBlob().Log(err).Json(w)
 		return

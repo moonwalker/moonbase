@@ -75,7 +75,7 @@ func GetTree(ctx context.Context, accessToken string, owner string, repo string,
 	return rc, nil
 }
 
-func GetBlobByPath(ctx context.Context, accessToken string, owner string, repo string, ref, path string) ([]byte, error) {
+func GetBlob(ctx context.Context, accessToken string, owner string, repo string, ref, path string) ([]byte, error) {
 	if len(path) == 0 {
 		return nil, errors.New("path not provided")
 	}
