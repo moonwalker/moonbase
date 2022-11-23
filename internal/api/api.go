@@ -50,10 +50,11 @@ func Routes() chi.Router {
 		r.Group(func(r chi.Router) {
 			// collections
 			r.Get("/cms/{owner}/{repo}/{ref}", getCollections)
-			r.Post("/cms/{owner}/{repo}/{ref}/new", newCollection)
+			r.Post("/cms/{owner}/{repo}/{ref}", newCollection)
 			// documents
 			r.Get("/cms/{owner}/{repo}/{ref}/{collection}", getDocuments)
-			r.Post("/cms/{owner}/{repo}/{ref}/{collection}/new", newDocument)
+			r.Post("/cms/{owner}/{repo}/{ref}/{collection}", newDocument)
+			// document
 			r.Get("/cms/{owner}/{repo}/{ref}/{collection}/{document}", getDocument)
 		})
 	})

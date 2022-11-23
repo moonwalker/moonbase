@@ -36,8 +36,19 @@ func getConfig(ctx context.Context, accessToken string, owner string, repo strin
 	return cms.ParseConfig(cmsConfigPath, data)
 }
 
-// collection
+// collections
 
+// @Summary		Get collections
+// @Tags		cms
+// @Accept		json
+// @Produce		json
+// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
+// @Success		200	{object}	[]treeItem
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}	[get]
+// @Security	bearerToken
 func getCollections(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accessToken := accessTokenFromContext(ctx)
@@ -85,9 +96,9 @@ func newCollection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.Content.Dir, collection.Name)
+	path := filepath.Join(cmsConfig.Content.Dir, collection.Name, ".gitkeep")
 
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, collection.User, collection.Email, "")
+	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, collection.User, collection.Email, "# keep")
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
 		return
@@ -98,6 +109,18 @@ func newCollection(w http.ResponseWriter, r *http.Request) {
 
 // documents
 
+// @Summary		Get documents
+// @Tags		cms
+// @Accept		json
+// @Produce		json
+// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
+// @Param		collection		path	string	true	"collection"
+// @Success		200	{object}	[]treeItem
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}/{collection}	[get]
+// @Security	bearerToken
 func getDocuments(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accessToken := accessTokenFromContext(ctx)
@@ -105,10 +128,12 @@ func getDocuments(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
 	ref := chi.URLParam(r, "ref")
+	collection := chi.URLParam(r, "collection")
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
+	path := filepath.Join(cmsConfig.Content.Dir, collection)
 
-	repoContents, err := gh.GetTree(ctx, accessToken, owner, repo, ref, cmsConfig.Content.Dir)
+	repoContents, err := gh.GetTree(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
 		errClientFailGetTree().Log(err).Json(w)
 		return
@@ -156,6 +181,19 @@ func newDocument(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// @Summary		Get document
+// @Tags		cms
+// @Accept		json
+// @Produce		json
+// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
+// @Param		collection		path	string	true	"collection"
+// @Param		document		path	string	true	"document"
+// @Success		200	{object}	blobEntry
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}/{collection}/{document}	[get]
+// @Security	bearerToken
 func getDocument(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accessToken := accessTokenFromContext(ctx)
