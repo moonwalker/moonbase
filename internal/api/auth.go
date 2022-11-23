@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/rs/xid"
@@ -20,13 +21,15 @@ import (
 // testing the flow:
 // http://localhost:8080/login/github?returnURL=/login/github/authenticate
 
+type ctxKey int
+
 const (
-	userCtxKey              = "user-token"
-	oauthStateSep           = "|"
-	retUrlCodeQuery     int = 0
-	retUrlCodePath          = 1
-	codeTokenExpiresMin     = 1
-	userTokenExpiresMin     = 30
+	retUrlCodePath            = 0
+	retUrlCodeQuery           = 1
+	oauthStateSep             = "|"
+	codeTokenExpires          = time.Minute
+	accessTokenExpires        = time.Hour * 24
+	ctxKeyAccessToken  ctxKey = iota
 )
 
 var (
@@ -113,7 +116,7 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func encryptAccessToken(accessToken string) (string, error) {
-	te, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, []byte(accessToken), userTokenExpiresMin)
+	te, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, []byte(accessToken), accessTokenExpires)
 	if err != nil {
 		return "", err
 	}
@@ -150,7 +153,7 @@ func returnURLWithCode(returnURL, code string, m int) (string, error) {
 		return "", err
 	}
 
-	codeToken, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, []byte(code), codeTokenExpiresMin)
+	codeToken, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, []byte(code), codeTokenExpires)
 	if err != nil {
 		return "", err
 	}
@@ -203,9 +206,13 @@ func withUser(next http.Handler) http.Handler {
 		}
 
 		// add auth claims to context
-		ctx := context.WithValue(r.Context(), userCtxKey, string(authClaims.Data))
+		ctx := context.WithValue(r.Context(), ctxKeyAccessToken, string(authClaims.Data))
 
 		// authenticated, pass it through
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func accessTokenFromContext(ctx context.Context) string {
+	return ctx.Value(ctxKeyAccessToken).(string)
 }

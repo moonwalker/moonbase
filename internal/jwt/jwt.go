@@ -14,7 +14,7 @@ type AuthClaims struct {
 	Data []byte `json:"data"`
 }
 
-func EncryptAndSign(encKey, sigKey []byte, data []byte, expiresInMin int) (string, error) {
+func EncryptAndSign(encKey, sigKey []byte, data []byte, expires time.Duration) (string, error) {
 	encData, err := jwe.Encrypt(encKey, data)
 	if err != nil {
 		return "", err
@@ -25,7 +25,7 @@ func EncryptAndSign(encKey, sigKey []byte, data []byte, expiresInMin int) (strin
 		StandardClaims: jwt.StandardClaims{
 			IssuedAt:  time.Now().Unix(),
 			NotBefore: time.Now().Unix(),
-			ExpiresAt: time.Now().Add(time.Duration(expiresInMin) * time.Minute).Unix(),
+			ExpiresAt: time.Now().Add(expires).Unix(),
 		},
 	})
 
