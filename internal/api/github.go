@@ -212,6 +212,7 @@ func postBlob(w http.ResponseWriter, r *http.Request) {
 	repo := chi.URLParam(r, "repo")
 	ref := chi.URLParam(r, "ref")
 	path := chi.URLParam(r, "*")
+
 	data := &commitPayload{}
 	err := json.NewDecoder(r.Body).Decode(data)
 	if err != nil {
