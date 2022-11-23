@@ -4,8 +4,8 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// @title Moonbase API
-// @description ### Git-based headless CMS API.
+// @title Moonbase
+// @description ### Git-based headless CMS API
 // @version 1.0
 
 // @license.name MIT

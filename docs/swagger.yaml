@@ -43,9 +43,7 @@ definitions:
   api.documentPayload:
     properties:
       contents:
-        items:
-          type: integer
-        type: array
+        type: string
       email:
         type: string
       name:
@@ -95,11 +93,11 @@ definitions:
     type: object
 info:
   contact: {}
-  description: '### Git-based headless CMS API.'
+  description: '### Git-based headless CMS API'
   license:
     name: MIT
     url: https://github.com/moonwalker/moonbase/blob/main/LICENSE
-  title: Moonbase API
+  title: Moonbase
   version: "1.0"
 paths:
   /cms/{owner}/{repo}/{ref}:
@@ -144,6 +142,21 @@ paths:
       consumes:
       - application/json
       parameters:
+      - description: the account owner of the repository (the name is not case sensitive)
+        in: path
+        name: owner
+        required: true
+        type: string
+      - description: the name of the repository (the name is not case sensitive)
+        in: path
+        name: repo
+        required: true
+        type: string
+      - description: git ref (branch, tag, sha)
+        in: path
+        name: ref
+        required: true
+        type: string
       - description: collection payload
         in: body
         name: payload
@@ -209,6 +222,26 @@ paths:
       consumes:
       - application/json
       parameters:
+      - description: the account owner of the repository (the name is not case sensitive)
+        in: path
+        name: owner
+        required: true
+        type: string
+      - description: the name of the repository (the name is not case sensitive)
+        in: path
+        name: repo
+        required: true
+        type: string
+      - description: git ref (branch, tag, sha)
+        in: path
+        name: ref
+        required: true
+        type: string
+      - description: collection
+        in: path
+        name: collection
+        required: true
+        type: string
       - description: document payload
         in: body
         name: payload

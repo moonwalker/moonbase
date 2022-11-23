@@ -32,7 +32,7 @@ type branchItem struct {
 
 type treeItem struct {
 	Name *string `json:"name"`
-	Path *string `json:"path"`
+	Path *string `json:"path,omitempty"`
 	Type *string `json:"type"`
 	SHA  *string `json:"sha"`
 }

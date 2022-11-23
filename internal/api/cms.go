@@ -26,7 +26,7 @@ type documentPayload struct {
 	Name     string `json:"name"`
 	User     string `json:"user"`
 	Email    string `json:"email"`
-	Contents []byte `json:"contents"`
+	Contents string `json:"contents"`
 }
 
 // config
@@ -70,7 +70,7 @@ func getCollections(w http.ResponseWriter, r *http.Request) {
 		if *rc.Type == "dir" {
 			treeItems = append(treeItems, &treeItem{
 				Name: rc.Name,
-				Path: rc.Path,
+				// Path: rc.Path,
 				Type: rc.Type,
 				SHA:  rc.SHA,
 			})
@@ -83,6 +83,9 @@ func getCollections(w http.ResponseWriter, r *http.Request) {
 // @Summary		New collection
 // @Tags		cms
 // @Accept		json
+// @Param		owner			path	string		true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string		true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string		true	"git ref (branch, tag, sha)"
 // @Param		payload	body	collectionPayload	true	"collection payload"
 // @Success		200
 // @Failure		500	{object}	errorData
@@ -152,7 +155,7 @@ func getDocuments(w http.ResponseWriter, r *http.Request) {
 		if *rc.Type == "file" {
 			treeItems = append(treeItems, &treeItem{
 				Name: rc.Name,
-				Path: rc.Path,
+				// Path: rc.Path,
 				Type: rc.Type,
 				SHA:  rc.SHA,
 			})
@@ -165,6 +168,10 @@ func getDocuments(w http.ResponseWriter, r *http.Request) {
 // @Summary		New document
 // @Tags		cms
 // @Accept		json
+// @Param		owner			path	string		true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string		true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string		true	"git ref (branch, tag, sha)"
+// @Param		collection		path	string		true	"collection"
 // @Param		payload			body	documentPayload	true	"document payload"
 // @Success		200
 // @Failure		500	{object}	errorData
@@ -177,6 +184,7 @@ func newDocument(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
 	ref := chi.URLParam(r, "ref")
+	collection := chi.URLParam(r, "collection")
 
 	document := &documentPayload{}
 	err := json.NewDecoder(r.Body).Decode(document)
@@ -186,9 +194,9 @@ func newDocument(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.Content.Dir, document.Name)
+	path := filepath.Join(cmsConfig.Content.Dir, collection, document.Name)
 
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, document.User, document.Email, string(document.Contents))
+	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, document.User, document.Email, document.Contents)
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
 		return
@@ -217,10 +225,11 @@ func getDocument(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
 	ref := chi.URLParam(r, "ref")
+	collection := chi.URLParam(r, "collection")
 	document := chi.URLParam(r, "document")
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.Content.Dir, document)
+	path := filepath.Join(cmsConfig.Content.Dir, collection, document)
 
 	blob, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {

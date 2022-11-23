@@ -93,6 +93,27 @@ const docTemplate = `{
                 "summary": "New collection",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "the account owner of the repository (the name is not case sensitive)",
+                        "name": "owner",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the name of the repository (the name is not case sensitive)",
+                        "name": "repo",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "git ref (branch, tag, sha)",
+                        "name": "ref",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "collection payload",
                         "name": "payload",
                         "in": "body",
@@ -194,6 +215,34 @@ const docTemplate = `{
                 ],
                 "summary": "New document",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the account owner of the repository (the name is not case sensitive)",
+                        "name": "owner",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the name of the repository (the name is not case sensitive)",
+                        "name": "repo",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "git ref (branch, tag, sha)",
+                        "name": "ref",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "collection",
+                        "name": "collection",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "description": "document payload",
                         "name": "payload",
@@ -630,10 +679,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "contents": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "string"
                 },
                 "email": {
                     "type": "string"
@@ -724,8 +770,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "Moonbase API",
-	Description:      "### Git-based headless CMS API.",
+	Title:            "Moonbase",
+	Description:      "### Git-based headless CMS API",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 }
