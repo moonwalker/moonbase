@@ -9,23 +9,12 @@ import (
 	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
 	githuboauth "golang.org/x/oauth2/github"
-	"gopkg.in/yaml.v2"
 
 	"github.com/moonwalker/moonbase/internal/env"
 )
 
-type cmsConfig struct {
-	Content struct {
-		Dir string `yaml:"dir"`
-	} `yaml:"content"`
-}
-
 var (
 	ghScopes = []string{"user:email", "read:org", "repo"}
-)
-
-const (
-	configYamlPath = "moonbase.yaml"
 )
 
 func ghConfig() *oauth2.Config {
@@ -77,53 +66,18 @@ func ListBranches(ctx context.Context, accessToken string, owner, repo string) (
 }
 
 func GetTree(ctx context.Context, accessToken string, owner string, repo string, branch string, path string) ([]*github.RepositoryContent, error) {
-	githubClient := ghClient(ctx, accessToken)
-	_, rc, _, err := githubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
+	_, rc, _, err := ghClient(ctx, accessToken).Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
 		Ref: branch,
 	})
 	if err != nil {
 		return nil, err
 	}
-
 	return rc, nil
 }
 
 func GetBlobByPath(ctx context.Context, accessToken string, owner string, repo string, ref, path string) ([]byte, error) {
-	githubClient := ghClient(ctx, accessToken)
-	blob, err := getBlobByPath(ctx, githubClient, owner, repo, ref, path)
-	if err != nil {
-		return nil, err
-	}
-	return blob, nil
-}
-
-// helpers
-func getContentDir(ctx context.Context, githubClient *github.Client, owner string, repo string, ref string) (string, error) {
-	cfg, err := getCmsConfig(ctx, githubClient, owner, repo, ref)
-	if err != nil {
-		return "", err
-	}
-	return cfg.Content.Dir, nil
-}
-
-func getCmsConfig(ctx context.Context, githubClient *github.Client, owner string, repo string, ref string) (*cmsConfig, error) {
-	config, err := getBlobByPath(ctx, githubClient, owner, repo, ref, configYamlPath)
-	if err != nil {
-		return nil, err
-	}
-
-	cfg := &cmsConfig{}
-	err = yaml.Unmarshal(config, cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return cfg, nil
-}
-
-func getBlobByPath(ctx context.Context, githubClient *github.Client, owner string, repo string, ref string, path string) ([]byte, error) {
 	if len(path) == 0 {
-		return nil, errors.New("no path provided")
+		return nil, errors.New("path not provided")
 	}
 
 	decodedPath, err := url.QueryUnescape(path)
@@ -131,7 +85,7 @@ func getBlobByPath(ctx context.Context, githubClient *github.Client, owner strin
 		return nil, err
 	}
 
-	fc, _, _, err := githubClient.Repositories.GetContents(ctx, owner, repo, decodedPath, &github.RepositoryContentGetOptions{
+	fc, _, _, err := ghClient(ctx, accessToken).Repositories.GetContents(ctx, owner, repo, decodedPath, &github.RepositoryContentGetOptions{
 		Ref: ref,
 	})
 	if err != nil {

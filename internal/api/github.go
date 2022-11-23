@@ -6,8 +6,7 @@ import (
 
 	"github.com/go-chi/chi"
 
-	"encoding/json"
-
+	"github.com/moonwalker/moonbase/internal/content"
 	"github.com/moonwalker/moonbase/internal/gh"
 )
 
@@ -43,7 +42,7 @@ type blobEntry struct {
 }
 
 const (
-	configYamlPath = "moonbase.yaml"
+	contentConfigPath = "moonbase.yaml"
 )
 
 // @Summary		Get repositories
@@ -145,6 +144,18 @@ func getTree(w http.ResponseWriter, r *http.Request) {
 	ref := chi.URLParam(r, "ref")
 	path := chi.URLParam(r, "*")
 
+	data, err := gh.GetBlobByPath(ctx, accessToken, owner, repo, ref, contentConfigPath)
+	if err != nil {
+		errClientFailGetBlob().Log(err).Json(w)
+		return
+	}
+
+	contentConfig, ok := content.ParseConfig(contentConfigPath, data)
+	if ok {
+		//
+		println(contentConfig.Content.Dir)
+	}
+
 	repoContents, err := gh.GetTree(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
 		errClientFailGetTree().Log(err).Json(w)
@@ -161,7 +172,7 @@ func getTree(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	json.NewEncoder(w).Encode(treeItems)
+	jsonResponse(w, http.StatusOK, treeItems)
 }
 
 // @Summary		Get blob
@@ -192,5 +203,5 @@ func getBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := &blobEntry{blob}
-	json.NewEncoder(w).Encode(data)
+	jsonResponse(w, http.StatusOK, data)
 }
