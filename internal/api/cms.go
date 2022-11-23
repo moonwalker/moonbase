@@ -80,6 +80,14 @@ func getCollections(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusOK, treeItems)
 }
 
+// @Summary		New collection
+// @Tags		cms
+// @Accept		json
+// @Param		payload	body	collectionPayload	true	"collection payload"
+// @Success		200
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}	[post]
+// @Security	bearerToken
 func newCollection(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accessToken := accessTokenFromContext(ctx)
@@ -154,6 +162,14 @@ func getDocuments(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusOK, treeItems)
 }
 
+// @Summary		New document
+// @Tags		cms
+// @Accept		json
+// @Param		payload			body	documentPayload	true	"document payload"
+// @Success		200
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}/{collection}	[post]
+// @Security	bearerToken
 func newDocument(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accessToken := accessTokenFromContext(ctx)

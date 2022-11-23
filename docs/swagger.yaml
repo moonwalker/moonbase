@@ -20,6 +20,15 @@ definitions:
           $ref: '#/definitions/api.branchItem'
         type: array
     type: object
+  api.collectionPayload:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      user:
+        type: string
+    type: object
   api.commitPayload:
     properties:
       contents:
@@ -27,6 +36,19 @@ definitions:
           type: integer
         type: array
       email:
+        type: string
+      user:
+        type: string
+    type: object
+  api.documentPayload:
+    properties:
+      contents:
+        items:
+          type: integer
+        type: array
+      email:
+        type: string
+      name:
         type: string
       user:
         type: string
@@ -118,6 +140,28 @@ paths:
       summary: Get collections
       tags:
       - cms
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: collection payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.collectionPayload'
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorData'
+      security:
+      - bearerToken: []
+      summary: New collection
+      tags:
+      - cms
   /cms/{owner}/{repo}/{ref}/{collection}:
     get:
       consumes:
@@ -159,6 +203,28 @@ paths:
       security:
       - bearerToken: []
       summary: Get documents
+      tags:
+      - cms
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: document payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/api.documentPayload'
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorData'
+      security:
+      - bearerToken: []
+      summary: New document
       tags:
       - cms
   /cms/{owner}/{repo}/{ref}/{collection}/{document}:

@@ -77,6 +77,42 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cms"
+                ],
+                "summary": "New collection",
+                "parameters": [
+                    {
+                        "description": "collection payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.collectionPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorData"
+                        }
+                    }
+                }
             }
         },
         "/cms/{owner}/{repo}/{ref}/{collection}": {
@@ -135,6 +171,42 @@ const docTemplate = `{
                                 "$ref": "#/definitions/api.treeItem"
                             }
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorData"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cms"
+                ],
+                "summary": "New document",
+                "parameters": [
+                    {
+                        "description": "document payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.documentPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     },
                     "500": {
                         "description": "Internal Server Error",
@@ -523,6 +595,20 @@ const docTemplate = `{
                 }
             }
         },
+        "api.collectionPayload": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "user": {
+                    "type": "string"
+                }
+            }
+        },
         "api.commitPayload": {
             "type": "object",
             "properties": {
@@ -533,6 +619,26 @@ const docTemplate = `{
                     }
                 },
                 "email": {
+                    "type": "string"
+                },
+                "user": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.documentPayload": {
+            "type": "object",
+            "properties": {
+                "contents": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "email": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 },
                 "user": {
