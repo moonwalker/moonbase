@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-chi/chi"
 
-	"github.com/moonwalker/moonbase/internal/content"
 	"github.com/moonwalker/moonbase/internal/gh"
 )
 
@@ -48,10 +47,6 @@ type commitPayload struct {
 	Contents []byte `json:"contents"`
 }
 
-const (
-	contentConfigPath = "moonbase.yaml"
-)
-
 // @Summary		Get repositories
 // @Tags		repos
 // @Accept		json
@@ -90,26 +85,6 @@ func getRepos(w http.ResponseWriter, r *http.Request) {
 
 	repoList := &repositoryList{LastPage: lastPage, Items: repoItems}
 	jsonResponse(w, http.StatusOK, repoList)
-}
-
-func getConfig(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
-
-	owner := chi.URLParam(r, "owner")
-	repo := chi.URLParam(r, "repo")
-	ref := chi.URLParam(r, "ref")
-
-	data, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, contentConfigPath)
-	if err == nil {
-		contentConfig, ok := content.ParseConfig(contentConfigPath, data)
-		if ok {
-			// path should be in allowed content dir if any
-			// also limit to allowed file types (see content.ext)
-			// otherwise we give a 404 to the user
-			println(contentConfig.Content.Dir)
-		}
-	}
 }
 
 // @Summary		Get branhces

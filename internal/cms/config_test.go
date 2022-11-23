@@ -1,4 +1,4 @@
-package content
+package cms
 
 import (
 	"os"
@@ -21,10 +21,7 @@ func TestConfigParseYAML(t *testing.T) {
 
 func testParse(t *testing.T, path string) {
 	data, _ := os.ReadFile(path)
-	config, ok := ParseConfig(path, data)
-	if !ok {
-		t.Fail()
-	}
+	config := ParseConfig(path, data)
 	if config.Content.Dir != contentDir {
 		t.Fail()
 	}
