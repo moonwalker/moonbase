@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"net/url"
 
 	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
@@ -80,12 +79,7 @@ func GetBlob(ctx context.Context, accessToken string, owner string, repo string,
 		return nil, errors.New("path not provided")
 	}
 
-	decodedPath, err := url.QueryUnescape(path)
-	if err != nil {
-		return nil, err
-	}
-
-	fc, _, _, err := ghClient(ctx, accessToken).Repositories.GetContents(ctx, owner, repo, decodedPath, &github.RepositoryContentGetOptions{
+	fc, _, _, err := ghClient(ctx, accessToken).Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
 		Ref: ref,
 	})
 	if err != nil {
