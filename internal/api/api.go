@@ -42,6 +42,7 @@ func Routes() chi.Router {
 		r.Get("/repos/{owner}/{repo}/tree/{ref}", getTree)
 		r.Get("/repos/{owner}/{repo}/tree/{ref}/*", getTree)
 		r.Get("/repos/{owner}/{repo}/blob/{ref}/*", getBlob)
+		//r.Post("/repos/{owner}/{repo}/blob/{ref}/*", commitBlob)
 	})
 
 	return r
