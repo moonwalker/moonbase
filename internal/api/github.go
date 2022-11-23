@@ -152,7 +152,9 @@ func getTree(w http.ResponseWriter, r *http.Request) {
 
 	contentConfig, ok := content.ParseConfig(contentConfigPath, data)
 	if ok {
-		//
+		// path should be in allowed content dir if any
+		// also limit to allowed file types (see content.ext)
+		// otherwise we give a 404 to the user
 		println(contentConfig.Content.Dir)
 	}
 

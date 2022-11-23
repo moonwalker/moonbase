@@ -1,2 +1,6 @@
 content:
-  dir: "content" # default to root if empty
+  dir: content
+  ext:
+    - .md
+    - .mdx
+    - .json
