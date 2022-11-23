@@ -26,6 +26,8 @@ var (
 		1012: "github client failed to get branches",
 		1013: "github client failed to get tree",
 		1014: "github client failed to get blob",
+		1015: "failed to decrypt request body",
+		1016: "github client failed to commit blob",
 	}
 	errUnauthorized              = func() *errorData { return makeError(401, 1000) }
 	errNoAuthToken               = func() *errorData { return makeError(401, 1001) }
@@ -42,6 +44,8 @@ var (
 	errClientFailGetBranches     = func() *errorData { return makeError(404, 1012) }
 	errClientFailGetTree         = func() *errorData { return makeError(404, 1013) }
 	errClientFailGetBlob         = func() *errorData { return makeError(404, 1014) }
+	errFailedDecReqBody          = func() *errorData { return makeError(500, 1015) }
+	errClientFailCommitBlob      = func() *errorData { return makeError(500, 1016) }
 )
 
 func makeError(statusCode, errorCode int) *errorData {

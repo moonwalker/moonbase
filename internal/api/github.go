@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -38,6 +39,12 @@ type treeItem struct {
 }
 
 type blobEntry struct {
+	Contents []byte `json:"contents"`
+}
+
+type commitPayload struct {
+	User     string `json:"user"`
+	Email    string `json:"email"`
 	Contents []byte `json:"contents"`
 }
 
@@ -203,4 +210,40 @@ func getBlob(w http.ResponseWriter, r *http.Request) {
 
 	data := &blobEntry{blob}
 	jsonResponse(w, http.StatusOK, data)
+}
+
+// @Summary		Get blob
+// @Tags		repos
+// @Accept		json
+// @Produce		json
+// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
+// @Param		path			path	string	true	"contents path"
+// @Success		200	{object}	blobEntry
+// @Failure		500	{object}	errorData
+// @Router		/repos/{owner}/{repo}/blob/{ref}/{path} [get]
+// @Security	bearerToken
+func commitBlob(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	accessToken := accessTokenFromContext(ctx)
+
+	owner := chi.URLParam(r, "owner")
+	repo := chi.URLParam(r, "repo")
+	ref := chi.URLParam(r, "ref")
+	path := chi.URLParam(r, "*")
+	data := &commitPayload{}
+	err := json.NewDecoder(r.Body).Decode(data)
+	if err != nil {
+		errFailedDecReqBody().Log(err).Json(w)
+		return
+	}
+
+	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, data.User, data.Email, string(data.Contents))
+	if err != nil {
+		errClientFailCommitBlob().Log(err).Json(w)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

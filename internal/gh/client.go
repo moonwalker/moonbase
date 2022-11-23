@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
@@ -92,4 +94,67 @@ func GetBlob(ctx context.Context, accessToken string, owner string, repo string,
 	}
 
 	return decodedBlob, nil
+}
+
+func CommitBlob(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, user string, email string, content string) error {
+	githubClient := ghClient(ctx, accessToken)
+
+	reference, _, err := githubClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+ref)
+	if err != nil {
+		return err
+	}
+
+	tree, err := getCommitTree(ctx, githubClient, owner, repo, *reference.Object.SHA, path, content)
+	if err != nil {
+		return err
+	}
+
+	if err := pushCommit(ctx, githubClient, reference, tree, owner, repo, user, email); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// getCommitTree generates the tree to commit based on the given files and the commit of the ref
+func getCommitTree(ctx context.Context, githubClient *github.Client, owner string, repo string, sha string, path string, content string) (tree *github.Tree, err error) {
+	// Create a tree with what to commit.
+	entries := []*github.TreeEntry{
+		{
+			Path:    github.String(path),
+			Type:    github.String("blob"),
+			Content: github.String(content),
+			Mode:    github.String("100644"),
+		},
+	}
+
+	tree, _, err = githubClient.Git.CreateTree(ctx, owner, repo, sha, entries)
+	return tree, err
+}
+
+// pushCommit creates the commit in the given reference using the given tree.
+func pushCommit(ctx context.Context, githubClient *github.Client, ref *github.Reference, tree *github.Tree, owner string, repo string, user string, email string) (err error) {
+	// Get the parent commit to attach the commit to.
+	parent, _, err := githubClient.Repositories.GetCommit(ctx, owner, repo, *ref.Object.SHA, nil)
+	if err != nil {
+		return err
+	}
+	// This is not always populated, but is needed.
+	parent.Commit.SHA = parent.SHA
+
+	// Create the commit using the tree.
+	date := time.Now()
+	commitMessage := fmt.Sprintf("%s commit", user)
+	author := &github.CommitAuthor{Date: &date, Name: &user, Email: &email}
+	commit := &github.Commit{Author: author, Message: &commitMessage, Tree: tree, Parents: []*github.Commit{parent.Commit}}
+	newCommit, _, err := githubClient.Git.CreateCommit(ctx, owner, repo, commit)
+
+	if err != nil {
+		return err
+	}
+
+	// Attach the commit to the master branch.
+	ref.Object.SHA = newCommit.SHA
+	_, _, err = githubClient.Git.UpdateRef(ctx, owner, repo, ref, false)
+	return err
 }
