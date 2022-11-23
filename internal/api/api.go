@@ -49,12 +49,12 @@ func Routes() chi.Router {
 		// higher level cms apis
 		r.Group(func(r chi.Router) {
 			// collections
-			r.Get("/cms/{owner}/{repo}/{ref}", getCollections)     // get tree
-			r.Post("/cms/{owner}/{repo}/{ref}/new", newCollection) // post blob
+			r.Get("/cms/{owner}/{repo}/{ref}", getCollections)
+			r.Post("/cms/{owner}/{repo}/{ref}/new", newCollection)
 			// documents
-			r.Get("/cms/{owner}/{repo}/{ref}/{collection}", getDocuments)           // get tree
-			r.Post("/cms/{owner}/{repo}/{ref}/{collection}/new", newDocument)       // post blob
-			r.Get("/cms/{owner}/{repo}/{ref}/{collection}/{document}", getDocument) // get blob
+			r.Get("/cms/{owner}/{repo}/{ref}/{collection}", getDocuments)
+			r.Post("/cms/{owner}/{repo}/{ref}/{collection}/new", newDocument)
+			r.Get("/cms/{owner}/{repo}/{ref}/{collection}/{document}", getDocument)
 		})
 	})
 
