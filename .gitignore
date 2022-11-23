@@ -9,12 +9,13 @@
 
 ## above combination will ignore all files without extension (go binaries for example)
 
-# unignore necessary files
+# unignore necessary files without extension
 !Makefile
 !Dockerfile
-!Earthfile
+!LICENSE
 
 # below are the usual ignores
 .DS_Store
 .env
 .env.local
+.curl
