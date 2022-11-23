@@ -1,4 +1,11 @@
 definitions:
+  api.bloblEntry:
+    properties:
+      contents:
+        items:
+          type: integer
+        type: array
+    type: object
   api.branchItem:
     properties:
       name:
@@ -121,9 +128,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              type: integer
-            type: array
+            $ref: '#/definitions/api.bloblEntry'
         "500":
           description: Internal Server Error
           schema:

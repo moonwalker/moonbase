@@ -121,10 +121,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "integer"
-                            }
+                            "$ref": "#/definitions/api.bloblEntry"
                         }
                     },
                     "500": {
@@ -253,6 +250,17 @@
         }
     },
     "definitions": {
+        "api.bloblEntry": {
+            "type": "object",
+            "properties": {
+                "contents": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "api.branchItem": {
             "type": "object",
             "properties": {

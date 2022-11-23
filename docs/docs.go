@@ -130,10 +130,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "integer"
-                            }
+                            "$ref": "#/definitions/api.bloblEntry"
                         }
                     },
                     "500": {
@@ -262,6 +259,17 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "api.bloblEntry": {
+            "type": "object",
+            "properties": {
+                "contents": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "api.branchItem": {
             "type": "object",
             "properties": {
