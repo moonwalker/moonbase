@@ -37,13 +37,29 @@ func Routes() chi.Router {
 	// api routes which needs authenticated user token
 	r.Group(func(r chi.Router) {
 		r.Use(withUser)
-		r.Get("/repos", getRepositories)
-		r.Get("/repos/{owner}/{repo}/branches", getBranches)
-		r.Get("/repos/{owner}/{repo}/tree/{ref}", getTree)
-		r.Get("/repos/{owner}/{repo}/tree/{ref}/*", getTree)
-		r.Get("/repos/{owner}/{repo}/blob/{ref}/*", getBlob)
-		r.Post("/repos/{owner}/{repo}/blob/{ref}/*", commitBlob)
+		// raw github apis
+		r.Group(func(r chi.Router) {
+			r.Get("/repos", getRepos)
+			r.Get("/repos/{owner}/{repo}/branches", getBranches)
+			r.Get("/repos/{owner}/{repo}/tree/{ref}", getTree)
+			r.Get("/repos/{owner}/{repo}/tree/{ref}/*", getTree)
+			r.Get("/repos/{owner}/{repo}/blob/{ref}/*", getBlob)
+			r.Post("/repos/{owner}/{repo}/blob/{ref}/*", postBlob)
+		})
+		// higher level content apis
+		r.Group(func(r chi.Router) {
+			//
+		})
 	})
+
+	// collections
+	r.Get("/cms/{owner}/{repo}/{ref}", printRouteParams)
+	r.Get("/cms/{owner}/{repo}/{ref}/new", printRouteParams)
+
+	// documents
+	r.Get("/cms/{owner}/{repo}/{ref}/{collection}", printRouteParams)
+	r.Get("/cms/{owner}/{repo}/{ref}/{collection}/new", printRouteParams)
+	r.Get("/cms/{owner}/{repo}/{ref}/{collection}/{document}", printRouteParams)
 
 	return r
 }

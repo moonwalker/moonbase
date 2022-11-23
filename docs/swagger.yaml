@@ -138,6 +138,46 @@ paths:
       summary: Get blob
       tags:
       - repos
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: the account owner of the repository (the name is not case sensitive)
+        in: path
+        name: owner
+        required: true
+        type: string
+      - description: the name of the repository (the name is not case sensitive)
+        in: path
+        name: repo
+        required: true
+        type: string
+      - description: git ref (branch, tag, sha)
+        in: path
+        name: ref
+        required: true
+        type: string
+      - description: contents path
+        in: path
+        name: path
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.blobEntry'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorData'
+      security:
+      - bearerToken: []
+      summary: Commit blob
+      tags:
+      - repos
   /repos/{owner}/{repo}/branches:
     get:
       consumes:
