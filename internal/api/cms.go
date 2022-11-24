@@ -25,8 +25,6 @@ type collectionPayload struct {
 
 type documentPayload struct {
 	Name     string `json:"name"`
-	User     string `json:"user"`
-	Email    string `json:"email"`
 	Contents string `json:"contents"`
 }
 
@@ -111,7 +109,7 @@ func newCollection(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(cmsConfig.Content.Dir, collection.Name, ".gitkeep")
 
 	commitMessage := fmt.Sprintf("feat(content): create %s", collection.Name)
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, collection.User, collection.Email, "", commitMessage)
+	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, "", commitMessage)
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
 		return
@@ -199,7 +197,7 @@ func newDocument(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(cmsConfig.Content.Dir, collection, document.Name)
 
 	commitMessage := fmt.Sprintf("feat(%s): %s", collection, document.Name)
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, document.User, document.Email, document.Contents, commitMessage)
+	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, document.Contents, commitMessage)
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
 		return

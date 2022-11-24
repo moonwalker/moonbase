@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"time"
 
 	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
@@ -95,7 +94,7 @@ func GetBlob(ctx context.Context, accessToken string, owner string, repo string,
 	return decodedBlob, nil
 }
 
-func CommitBlob(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, user string, email string, content string, commitMessage string) error {
+func CommitBlob(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, content string, commitMessage string) error {
 	githubClient := ghClient(ctx, accessToken)
 
 	reference, _, err := githubClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+ref)
@@ -108,7 +107,7 @@ func CommitBlob(ctx context.Context, accessToken string, owner string, repo stri
 		return err
 	}
 
-	if err := pushCommit(ctx, githubClient, reference, tree, owner, repo, user, email, commitMessage); err != nil {
+	if err := pushCommit(ctx, githubClient, reference, tree, owner, repo, commitMessage); err != nil {
 		return err
 	}
 
@@ -132,7 +131,7 @@ func getCommitTree(ctx context.Context, githubClient *github.Client, owner strin
 }
 
 // pushCommit creates the commit in the given reference using the given tree
-func pushCommit(ctx context.Context, githubClient *github.Client, ref *github.Reference, tree *github.Tree, owner string, repo string, user string, email string, commitMessage string) (err error) {
+func pushCommit(ctx context.Context, githubClient *github.Client, ref *github.Reference, tree *github.Tree, owner string, repo string, commitMessage string) (err error) {
 	// Get the parent commit
 	parent, _, err := githubClient.Repositories.GetCommit(ctx, owner, repo, *ref.Object.SHA, nil)
 	if err != nil {
@@ -140,9 +139,7 @@ func pushCommit(ctx context.Context, githubClient *github.Client, ref *github.Re
 	}
 	parent.Commit.SHA = parent.SHA
 
-	date := time.Now()
-	author := &github.CommitAuthor{Date: &date, Name: &user, Email: &email}
-	commit := &github.Commit{Author: author, Message: &commitMessage, Tree: tree, Parents: []*github.Commit{parent.Commit}}
+	commit := &github.Commit{Message: &commitMessage, Tree: tree, Parents: []*github.Commit{parent.Commit}}
 	newCommit, _, err := githubClient.Git.CreateCommit(ctx, owner, repo, commit)
 
 	if err != nil {
