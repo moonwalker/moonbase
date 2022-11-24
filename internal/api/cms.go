@@ -29,6 +29,10 @@ type entryPayload struct {
 	Contents string `json:"contents"`
 }
 
+type deletePayload struct {
+	Name string `json:"name"`
+}
+
 // config
 
 func getConfig(ctx context.Context, accessToken string, owner string, repo string, ref string) *cms.Config {
@@ -253,4 +257,47 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 
 	data := &blobEntry{blob}
 	jsonResponse(w, http.StatusOK, data)
+}
+
+// @Summary		Delete document
+// @Tags		cms
+// @Accept		json
+// @Param		owner			path	string		true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string		true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string		true	"git ref (branch, tag, sha)"
+// @Param		collection		path	string		true	"collection"
+// @Param		payload			body	deletePayload	true	"delete payload"
+// @Success		200
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}/{collection}	[delete]
+// @Security	bearerToken
+func delEntry(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	accessToken := accessTokenFromContext(ctx)
+
+	owner := chi.URLParam(r, "owner")
+	repo := chi.URLParam(r, "repo")
+	ref := chi.URLParam(r, "ref")
+	collection := chi.URLParam(r, "collection")
+
+	delPayload := &deletePayload{}
+	err := json.NewDecoder(r.Body).Decode(delPayload)
+	if err != nil {
+		errFailedDecReqBody().Log(err).Json(w)
+		return
+	}
+
+	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
+
+	documentName := slug.Make(delPayload.Name)
+	path := filepath.Join(cmsConfig.Content.Dir, collection, documentName)
+
+	commitMessage := fmt.Sprintf("delete(%s): %s", collection, documentName)
+	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, nil, commitMessage)
+	if err != nil {
+		errClientFailDeleteBlob().Log(err).Json(w)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
