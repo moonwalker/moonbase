@@ -38,7 +38,7 @@ definitions:
           type: integer
         type: array
     type: object
-  api.documentPayload:
+  api.entryPayload:
     properties:
       contents:
         type: string
@@ -94,7 +94,53 @@ info:
   title: Moonbase
   version: "1.0"
 paths:
-  /cms/{owner}/{repo}/{ref}:
+  /cms/{owner}/{repo}/{ref}/{collection}/{entry}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: the account owner of the repository (the name is not case sensitive)
+        in: path
+        name: owner
+        required: true
+        type: string
+      - description: the name of the repository (the name is not case sensitive)
+        in: path
+        name: repo
+        required: true
+        type: string
+      - description: git ref (branch, tag, sha)
+        in: path
+        name: ref
+        required: true
+        type: string
+      - description: collection
+        in: path
+        name: collection
+        required: true
+        type: string
+      - description: entry
+        in: path
+        name: entry
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.entryPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorData'
+      security:
+      - bearerToken: []
+      summary: Get entry
+      tags:
+      - cms
+  /cms/{owner}/{repo}/{ref}/collections:
     get:
       consumes:
       - application/json
@@ -166,10 +212,10 @@ paths:
             $ref: '#/definitions/api.errorData'
       security:
       - bearerToken: []
-      summary: New collection
+      summary: Create or Update collection
       tags:
       - cms
-  /cms/{owner}/{repo}/{ref}/{collection}:
+  /cms/{owner}/{repo}/{ref}/collections/{collection}:
     get:
       consumes:
       - application/json
@@ -209,7 +255,7 @@ paths:
             $ref: '#/definitions/api.errorData'
       security:
       - bearerToken: []
-      summary: Get documents
+      summary: Get entries
       tags:
       - cms
     post:
@@ -236,12 +282,12 @@ paths:
         name: collection
         required: true
         type: string
-      - description: document payload
+      - description: entry payload
         in: body
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/api.documentPayload'
+          $ref: '#/definitions/api.entryPayload'
       responses:
         "200":
           description: OK
@@ -251,53 +297,7 @@ paths:
             $ref: '#/definitions/api.errorData'
       security:
       - bearerToken: []
-      summary: New document
-      tags:
-      - cms
-  /cms/{owner}/{repo}/{ref}/{collection}/{document}:
-    get:
-      consumes:
-      - application/json
-      parameters:
-      - description: the account owner of the repository (the name is not case sensitive)
-        in: path
-        name: owner
-        required: true
-        type: string
-      - description: the name of the repository (the name is not case sensitive)
-        in: path
-        name: repo
-        required: true
-        type: string
-      - description: git ref (branch, tag, sha)
-        in: path
-        name: ref
-        required: true
-        type: string
-      - description: collection
-        in: path
-        name: collection
-        required: true
-        type: string
-      - description: document
-        in: path
-        name: document
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/api.blobEntry'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/api.errorData'
-      security:
-      - bearerToken: []
-      summary: Get document
+      summary: Create or Update entry
       tags:
       - cms
   /repos:
@@ -340,6 +340,42 @@ paths:
       tags:
       - repos
   /repos/{owner}/{repo}/blob/{ref}/{path}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: the account owner of the repository (the name is not case sensitive)
+        in: path
+        name: owner
+        required: true
+        type: string
+      - description: the name of the repository (the name is not case sensitive)
+        in: path
+        name: repo
+        required: true
+        type: string
+      - description: git ref (branch, tag, sha)
+        in: path
+        name: ref
+        required: true
+        type: string
+      - description: contents path
+        in: path
+        name: path
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorData'
+      security:
+      - bearerToken: []
+      summary: DElete blob
+      tags:
+      - repos
     get:
       consumes:
       - application/json
@@ -384,6 +420,26 @@ paths:
       consumes:
       - application/json
       parameters:
+      - description: the account owner of the repository (the name is not case sensitive)
+        in: path
+        name: owner
+        required: true
+        type: string
+      - description: the name of the repository (the name is not case sensitive)
+        in: path
+        name: repo
+        required: true
+        type: string
+      - description: git ref (branch, tag, sha)
+        in: path
+        name: ref
+        required: true
+        type: string
+      - description: contents path
+        in: path
+        name: path
+        required: true
+        type: string
       - description: commit payload
         in: body
         name: payload

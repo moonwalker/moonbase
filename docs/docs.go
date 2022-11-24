@@ -20,7 +20,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/cms/{owner}/{repo}/{ref}": {
+        "/cms/{owner}/{repo}/{ref}/collections": {
             "get": {
                 "security": [
                     {
@@ -90,7 +90,7 @@ const docTemplate = `{
                 "tags": [
                     "cms"
                 ],
-                "summary": "New collection",
+                "summary": "Create or Update collection",
                 "parameters": [
                     {
                         "type": "string",
@@ -136,7 +136,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/cms/{owner}/{repo}/{ref}/{collection}": {
+        "/cms/{owner}/{repo}/{ref}/collections/{collection}": {
             "get": {
                 "security": [
                     {
@@ -152,7 +152,7 @@ const docTemplate = `{
                 "tags": [
                     "cms"
                 ],
-                "summary": "Get documents",
+                "summary": "Get entries",
                 "parameters": [
                     {
                         "type": "string",
@@ -213,7 +213,7 @@ const docTemplate = `{
                 "tags": [
                     "cms"
                 ],
-                "summary": "New document",
+                "summary": "Create or Update entry",
                 "parameters": [
                     {
                         "type": "string",
@@ -244,12 +244,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "document payload",
+                        "description": "entry payload",
                         "name": "payload",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.documentPayload"
+                            "$ref": "#/definitions/api.entryPayload"
                         }
                     }
                 ],
@@ -266,7 +266,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/cms/{owner}/{repo}/{ref}/{collection}/{document}": {
+        "/cms/{owner}/{repo}/{ref}/{collection}/{entry}": {
             "get": {
                 "security": [
                     {
@@ -282,7 +282,7 @@ const docTemplate = `{
                 "tags": [
                     "cms"
                 ],
-                "summary": "Get document",
+                "summary": "Get entry",
                 "parameters": [
                     {
                         "type": "string",
@@ -314,8 +314,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "document",
-                        "name": "document",
+                        "description": "entry",
+                        "name": "entry",
                         "in": "path",
                         "required": true
                     }
@@ -324,7 +324,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.blobEntry"
+                            "$ref": "#/definitions/api.entryPayload"
                         }
                     },
                     "500": {
@@ -472,6 +472,34 @@ const docTemplate = `{
                 "summary": "Commit blob",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "the account owner of the repository (the name is not case sensitive)",
+                        "name": "owner",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the name of the repository (the name is not case sensitive)",
+                        "name": "repo",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "git ref (branch, tag, sha)",
+                        "name": "ref",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "contents path",
+                        "name": "path",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "commit payload",
                         "name": "payload",
                         "in": "body",
@@ -479,6 +507,61 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/api.commitPayload"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorData"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "repos"
+                ],
+                "summary": "DElete blob",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the account owner of the repository (the name is not case sensitive)",
+                        "name": "owner",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the name of the repository (the name is not case sensitive)",
+                        "name": "repo",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "git ref (branch, tag, sha)",
+                        "name": "ref",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "contents path",
+                        "name": "path",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -672,7 +755,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.documentPayload": {
+        "api.entryPayload": {
             "type": "object",
             "properties": {
                 "contents": {
