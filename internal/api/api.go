@@ -48,6 +48,9 @@ func Routes() chi.Router {
 		})
 		// higher level cms apis
 		r.Group(func(r chi.Router) {
+			//
+			// home dash info about repo
+			//
 			// collections
 			r.Get("/cms/{owner}/{repo}/{ref}", getCollections)
 			r.Post("/cms/{owner}/{repo}/{ref}", newCollection)

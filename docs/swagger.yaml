@@ -31,6 +31,8 @@ definitions:
     type: object
   api.commitPayload:
     properties:
+      commitMessage:
+        type: string
       contents:
         items:
           type: integer

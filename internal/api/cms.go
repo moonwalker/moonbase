@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"path/filepath"
 
@@ -109,7 +110,8 @@ func newCollection(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 	path := filepath.Join(cmsConfig.Content.Dir, collection.Name, ".gitkeep")
 
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, collection.User, collection.Email, "# keep")
+	commitMessage := fmt.Sprintf("feat(content): create %s", collection.Name)
+	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, collection.User, collection.Email, "", commitMessage)
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
 		return
@@ -196,7 +198,8 @@ func newDocument(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 	path := filepath.Join(cmsConfig.Content.Dir, collection, document.Name)
 
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, document.User, document.Email, document.Contents)
+	commitMessage := fmt.Sprintf("feat(%s): %s", collection, document.Name)
+	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, document.User, document.Email, document.Contents, commitMessage)
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
 		return

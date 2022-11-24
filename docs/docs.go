@@ -661,6 +661,9 @@ const docTemplate = `{
         "api.commitPayload": {
             "type": "object",
             "properties": {
+                "commitMessage": {
+                    "type": "string"
+                },
                 "contents": {
                     "type": "array",
                     "items": {
