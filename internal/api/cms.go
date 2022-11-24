@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/gosimple/slug"
@@ -239,7 +240,10 @@ func postEntry(w http.ResponseWriter, r *http.Request) {
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
-	entryName := slug.Make(entry.Name)
+	ext := filepath.Ext(entry.Name)
+	fn := strings.TrimSuffix(filepath.Base(entry.Name), ext)
+	entryName := slug.Make(fn) + ext
+
 	path := filepath.Join(cmsConfig.Content.Dir, collection, entryName)
 	commitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, entryName)
 
