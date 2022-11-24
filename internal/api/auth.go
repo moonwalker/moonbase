@@ -37,8 +37,9 @@ var (
 )
 
 type User struct {
-	Login *string `json:"login,omitempty"`
-	Image *string `json:"image,omitempty"`
+	Login *string `json:"login"`
+	Email *string `json:"email"`
+	Image *string `json:"image"`
 	Token string  `json:"token"`
 }
 
@@ -108,8 +109,14 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 
 	usr := &User{
 		Login: ghUser.Login,
+		Email: ghUser.Email,
 		Image: ghUser.AvatarURL,
 		Token: et,
+	}
+
+	if usr.Email == nil {
+		e := fmt.Sprintf("%d+%s@users.noreply.github.com", *ghUser.ID, *ghUser.Login)
+		usr.Email = &e
 	}
 
 	jsonResponse(w, http.StatusOK, usr)
