@@ -242,7 +242,7 @@ func postEntry(w http.ResponseWriter, r *http.Request) {
 	entryName := slug.Make(entry.Name)
 	path := filepath.Join(cmsConfig.Content.Dir, collection, entryName)
 
-	commitMessage := fmt.Sprintf("feat(%s): %s", collection, entryName)
+	commitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, entryName)
 	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &entry.Contents, commitMessage)
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
