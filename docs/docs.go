@@ -469,7 +469,7 @@ const docTemplate = `{
                 "tags": [
                     "repos"
                 ],
-                "summary": "Commit blob",
+                "summary": "Post blob",
                 "parameters": [
                     {
                         "type": "string",
@@ -533,7 +533,7 @@ const docTemplate = `{
                 "tags": [
                     "repos"
                 ],
-                "summary": "DElete blob",
+                "summary": "Delete blob",
                 "parameters": [
                     {
                         "type": "string",

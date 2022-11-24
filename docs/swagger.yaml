@@ -373,7 +373,7 @@ paths:
             $ref: '#/definitions/api.errorData'
       security:
       - bearerToken: []
-      summary: DElete blob
+      summary: Delete blob
       tags:
       - repos
     get:
@@ -455,7 +455,7 @@ paths:
             $ref: '#/definitions/api.errorData'
       security:
       - bearerToken: []
-      summary: Commit blob
+      summary: Post blob
       tags:
       - repos
   /repos/{owner}/{repo}/branches:
