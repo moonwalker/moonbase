@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
-	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/gosimple/slug"
@@ -109,7 +108,7 @@ func newCollection(w http.ResponseWriter, r *http.Request) {
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
-	collectionName := strings.ToLower(collection.Name)
+	collectionName := slug.Make(collection.Name)
 	path := filepath.Join(cmsConfig.Content.Dir, collectionName, ".gitkeep")
 	commitMessage := fmt.Sprintf("feat(content): create %s", collectionName)
 
