@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-chi/chi"
 
@@ -108,9 +109,11 @@ func newCollection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.Content.Dir, collection.Name, ".gitkeep")
 
-	commitMessage := fmt.Sprintf("feat(content): create %s", collection.Name)
+	collectionName := strings.ToLower(collection.Name)
+	path := filepath.Join(cmsConfig.Content.Dir, collectionName, ".gitkeep")
+	commitMessage := fmt.Sprintf("feat(content): create %s", collectionName)
+
 	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, collection.User, collection.Email, "", commitMessage)
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
@@ -196,9 +199,11 @@ func newDocument(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.Content.Dir, collection, document.Name)
 
-	commitMessage := fmt.Sprintf("feat(%s): %s", collection, document.Name)
+	documentName := document.Name
+	path := filepath.Join(cmsConfig.Content.Dir, collection, documentName)
+
+	commitMessage := fmt.Sprintf("feat(%s): %s", collection, documentName)
 	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, document.User, document.Email, document.Contents, commitMessage)
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
