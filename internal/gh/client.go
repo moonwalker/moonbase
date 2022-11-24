@@ -121,8 +121,8 @@ func getCommitTree(ctx context.Context, githubClient *github.Client, owner strin
 		{
 			Path:    github.String(path),
 			Type:    github.String("blob"),
-			Content: content,
 			Mode:    github.String("100644"),
+			Content: content,
 		},
 	}
 
