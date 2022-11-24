@@ -321,7 +321,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/cms/{owner}/{repo}/{ref}/{collection}": {
+        "/cms/{owner}/{repo}/{ref}/collections/{collection}/{entry}": {
             "delete": {
                 "security": [
                     {
@@ -334,7 +334,7 @@ const docTemplate = `{
                 "tags": [
                     "cms"
                 ],
-                "summary": "Delete document",
+                "summary": "Delete entry",
                 "parameters": [
                     {
                         "type": "string",
@@ -365,13 +365,11 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "delete payload",
-                        "name": "payload",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.deletePayload"
-                        }
+                        "type": "string",
+                        "description": "entry",
+                        "name": "entry",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -867,14 +865,6 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
-                }
-            }
-        },
-        "api.deletePayload": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
                 }
             }
         },
