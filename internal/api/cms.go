@@ -19,9 +19,7 @@ const (
 )
 
 type collectionPayload struct {
-	Name  string `json:"name"`
-	User  string `json:"user"`
-	Email string `json:"email"`
+	Name string `json:"name"`
 }
 
 type entryPayload struct {
@@ -127,6 +125,41 @@ func postCollection(w http.ResponseWriter, r *http.Request) {
 	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &emptyContent, commitMessage)
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// @Summary		Delete collection
+// @Tags		cms
+// @Accept		json
+// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
+// @Param		collection		path	string	true	"collection"
+// @Success		200
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}/collections/{collection} [delete]
+// @Security	bearerToken
+func delCollection(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	accessToken := accessTokenFromContext(ctx)
+
+	owner := chi.URLParam(r, "owner")
+	repo := chi.URLParam(r, "repo")
+	ref := chi.URLParam(r, "ref")
+	collection := chi.URLParam(r, "collection")
+
+	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
+
+	collectionName := slug.Make(collection)
+	path := filepath.Join(cmsConfig.Content.Dir, collectionName, ".gitkeep")
+	commitMessage := fmt.Sprintf("feat(content): delete %s", collectionName)
+
+	err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, nil, commitMessage)
+	if err != nil {
+		errClientFailDeleteBlob().Log(err).Json(w)
 		return
 	}
 
