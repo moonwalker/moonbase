@@ -197,7 +197,7 @@ func getBlob(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusOK, data)
 }
 
-// @Summary		Commit blob
+// @Summary		Post blob
 // @Tags		repos
 // @Accept		json
 // @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
@@ -235,7 +235,7 @@ func postBlob(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// @Summary		DElete blob
+// @Summary		Delete blob
 // @Tags		repos
 // @Accept		json
 // @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
