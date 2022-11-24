@@ -42,8 +42,6 @@ type blobEntry struct {
 }
 
 type commitPayload struct {
-	User          string `json:"user"`
-	Email         string `json:"email"`
 	Contents      []byte `json:"contents"`
 	CommitMessage string `json:"commitMessage"`
 }
@@ -221,7 +219,7 @@ func postBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, data.User, data.Email, string(data.Contents), string(data.CommitMessage))
+	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, string(data.Contents), string(data.CommitMessage))
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
 		return

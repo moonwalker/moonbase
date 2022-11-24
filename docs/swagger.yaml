@@ -37,20 +37,12 @@ definitions:
         items:
           type: integer
         type: array
-      email:
-        type: string
-      user:
-        type: string
     type: object
   api.documentPayload:
     properties:
       contents:
         type: string
-      email:
-        type: string
       name:
-        type: string
-      user:
         type: string
     type: object
   api.errorData:

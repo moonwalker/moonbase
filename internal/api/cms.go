@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
+	"github.com/gosimple/slug"
 
 	"github.com/moonwalker/moonbase/internal/cms"
 	"github.com/moonwalker/moonbase/internal/gh"
@@ -26,8 +27,6 @@ type collectionPayload struct {
 
 type documentPayload struct {
 	Name     string `json:"name"`
-	User     string `json:"user"`
-	Email    string `json:"email"`
 	Contents string `json:"contents"`
 }
 
@@ -114,7 +113,7 @@ func newCollection(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(cmsConfig.Content.Dir, collectionName, ".gitkeep")
 	commitMessage := fmt.Sprintf("feat(content): create %s", collectionName)
 
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, collection.User, collection.Email, "", commitMessage)
+	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, "", commitMessage)
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
 		return
@@ -200,11 +199,11 @@ func newDocument(w http.ResponseWriter, r *http.Request) {
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
-	documentName := document.Name
+	documentName := slug.Make(document.Name)
 	path := filepath.Join(cmsConfig.Content.Dir, collection, documentName)
 
 	commitMessage := fmt.Sprintf("feat(%s): %s", collection, documentName)
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, document.User, document.Email, document.Contents, commitMessage)
+	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, document.Contents, commitMessage)
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
 		return

@@ -7,6 +7,7 @@ require (
 	github.com/go-chi/chi v1.5.4
 	github.com/go-chi/cors v1.2.1
 	github.com/google/go-github/v48 v48.1.0
+	github.com/gosimple/slug v1.13.1
 	github.com/joho/godotenv v1.4.0
 	github.com/rs/xid v1.4.0
 	github.com/rs/zerolog v1.28.0
@@ -25,6 +26,7 @@ require (
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect

@@ -669,12 +669,6 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
-                },
-                "email": {
-                    "type": "string"
-                },
-                "user": {
-                    "type": "string"
                 }
             }
         },
@@ -684,13 +678,7 @@ const docTemplate = `{
                 "contents": {
                     "type": "string"
                 },
-                "email": {
-                    "type": "string"
-                },
                 "name": {
-                    "type": "string"
-                },
-                "user": {
                     "type": "string"
                 }
             }

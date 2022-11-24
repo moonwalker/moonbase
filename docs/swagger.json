@@ -660,12 +660,6 @@
                     "items": {
                         "type": "integer"
                     }
-                },
-                "email": {
-                    "type": "string"
-                },
-                "user": {
-                    "type": "string"
                 }
             }
         },
@@ -675,13 +669,7 @@
                 "contents": {
                     "type": "string"
                 },
-                "email": {
-                    "type": "string"
-                },
                 "name": {
-                    "type": "string"
-                },
-                "user": {
                     "type": "string"
                 }
             }
