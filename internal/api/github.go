@@ -2,7 +2,9 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"path/filepath"
 	"strconv"
 
 	"github.com/go-chi/chi"
@@ -198,6 +200,10 @@ func getBlob(w http.ResponseWriter, r *http.Request) {
 // @Summary		Commit blob
 // @Tags		repos
 // @Accept		json
+// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
+// @Param		path			path	string	true	"contents path"
 // @Param		payload			body	commitPayload	true	"commit payload"
 // @Success		200
 // @Failure		500	{object}	errorData
@@ -219,9 +225,40 @@ func postBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, string(data.Contents), string(data.CommitMessage))
+	contents := string(data.Contents)
+	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &contents, string(data.CommitMessage))
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// @Summary		DElete blob
+// @Tags		repos
+// @Accept		json
+// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
+// @Param		path			path	string	true	"contents path"
+// @Success		200
+// @Failure		500	{object}	errorData
+// @Router		/repos/{owner}/{repo}/blob/{ref}/{path} [delete]
+// @Security	bearerToken
+func delBlob(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	accessToken := accessTokenFromContext(ctx)
+
+	owner := chi.URLParam(r, "owner")
+	repo := chi.URLParam(r, "repo")
+	ref := chi.URLParam(r, "ref")
+	path := chi.URLParam(r, "*")
+
+	deleteMessage := fmt.Sprintf("delete %s", filepath.Base(path))
+	err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, nil, deleteMessage)
+	if err != nil {
+		errClientFailDeleteBlob().Log(err).Json(w)
 		return
 	}
 

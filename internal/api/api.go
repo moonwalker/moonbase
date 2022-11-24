@@ -45,6 +45,7 @@ func Routes() chi.Router {
 			r.Get("/repos/{owner}/{repo}/tree/{ref}/*", getTree)
 			r.Get("/repos/{owner}/{repo}/blob/{ref}/*", getBlob)
 			r.Post("/repos/{owner}/{repo}/blob/{ref}/*", postBlob)
+			r.Delete("/repos/{owner}/{repo}/blob/{ref}/*", delBlob)
 		})
 		// higher level cms apis
 		r.Group(func(r chi.Router) {

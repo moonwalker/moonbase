@@ -94,7 +94,7 @@ func GetBlob(ctx context.Context, accessToken string, owner string, repo string,
 	return decodedBlob, nil
 }
 
-func CommitBlob(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, content string, commitMessage string) error {
+func CommitBlob(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, content *string, commitMessage string) error {
 	githubClient := ghClient(ctx, accessToken)
 
 	reference, _, err := githubClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+ref)
@@ -115,13 +115,13 @@ func CommitBlob(ctx context.Context, accessToken string, owner string, repo stri
 }
 
 // getCommitTree generates the tree to commit based on the given files and the commit of the ref
-func getCommitTree(ctx context.Context, githubClient *github.Client, owner string, repo string, sha string, path string, content string) (tree *github.Tree, err error) {
+func getCommitTree(ctx context.Context, githubClient *github.Client, owner string, repo string, sha string, path string, content *string) (tree *github.Tree, err error) {
 	// Create a tree with what to commit.
 	entries := []*github.TreeEntry{
 		{
 			Path:    github.String(path),
 			Type:    github.String("blob"),
-			Content: github.String(content),
+			Content: content,
 			Mode:    github.String("100644"),
 		},
 	}

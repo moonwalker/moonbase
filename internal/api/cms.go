@@ -111,8 +111,9 @@ func newCollection(w http.ResponseWriter, r *http.Request) {
 	collectionName := slug.Make(collection.Name)
 	path := filepath.Join(cmsConfig.Content.Dir, collectionName, ".gitkeep")
 	commitMessage := fmt.Sprintf("feat(content): create %s", collectionName)
+	emptyContent := ""
 
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, "", commitMessage)
+	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &emptyContent, commitMessage)
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
 		return
@@ -202,7 +203,7 @@ func newDocument(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(cmsConfig.Content.Dir, collection, documentName)
 
 	commitMessage := fmt.Sprintf("feat(%s): %s", collection, documentName)
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, document.Contents, commitMessage)
+	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &document.Contents, commitMessage)
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
 		return
