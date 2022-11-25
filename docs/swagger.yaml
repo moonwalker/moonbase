@@ -90,52 +90,6 @@ info:
   title: Moonbase
   version: "1.0"
 paths:
-  /cms/{owner}/{repo}/{ref}/{collection}/{entry}:
-    get:
-      consumes:
-      - application/json
-      parameters:
-      - description: the account owner of the repository (the name is not case sensitive)
-        in: path
-        name: owner
-        required: true
-        type: string
-      - description: the name of the repository (the name is not case sensitive)
-        in: path
-        name: repo
-        required: true
-        type: string
-      - description: git ref (branch, tag, sha)
-        in: path
-        name: ref
-        required: true
-        type: string
-      - description: collection
-        in: path
-        name: collection
-        required: true
-        type: string
-      - description: entry
-        in: path
-        name: entry
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/api.entryPayload'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/api.errorData'
-      security:
-      - bearerToken: []
-      summary: Get entry
-      tags:
-      - cms
   /cms/{owner}/{repo}/{ref}/collections:
     get:
       consumes:
@@ -372,6 +326,51 @@ paths:
       security:
       - bearerToken: []
       summary: Delete entry
+      tags:
+      - cms
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: the account owner of the repository (the name is not case sensitive)
+        in: path
+        name: owner
+        required: true
+        type: string
+      - description: the name of the repository (the name is not case sensitive)
+        in: path
+        name: repo
+        required: true
+        type: string
+      - description: git ref (branch, tag, sha)
+        in: path
+        name: ref
+        required: true
+        type: string
+      - description: collection
+        in: path
+        name: collection
+        required: true
+        type: string
+      - description: entry
+        in: path
+        name: entry
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.entryPayload'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.errorData'
+      security:
+      - bearerToken: []
+      summary: Get entry
       tags:
       - cms
   /repos:

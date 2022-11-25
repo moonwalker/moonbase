@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	cmsConfigPath = "moonbase.yaml"
+	cmsConfigPath  = "moonbase.yaml"
+	jsonSchemaName = "_schema.json"
 )
 
 type collectionPayload struct {
@@ -40,6 +41,14 @@ type commitEntry struct {
 func getConfig(ctx context.Context, accessToken string, owner string, repo string, ref string) *cms.Config {
 	data, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, cmsConfigPath)
 	return cms.ParseConfig(cmsConfigPath, data)
+}
+
+// schema
+
+func getSchema(ctx context.Context, accessToken string, owner string, repo string, ref string, collection string, workdir string) *cms.Schema {
+	p := filepath.Join(workdir, collection, jsonSchemaName)
+	data, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, p)
+	return cms.NewSchema(data)
 }
 
 // info
@@ -273,6 +282,13 @@ func postEntry(w http.ResponseWriter, r *http.Request) {
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
+	schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.Workdir)
+	err = schema.Validate(entry)
+	if err != nil {
+		errSchemaValidationFailed().Log(err).Json(w)
+		return
+	}
+
 	ext := filepath.Ext(entry.Name)
 	fn := strings.TrimSuffix(filepath.Base(entry.Name), ext)
 	entryName := slug.Make(fn) + ext
@@ -300,7 +316,7 @@ func postEntry(w http.ResponseWriter, r *http.Request) {
 // @Param		entry			path	string	true	"entry"
 // @Success		200	{object}	entryPayload
 // @Failure		500	{object}	errorData
-// @Router		/cms/{owner}/{repo}/{ref}/{collection}/{entry}	[get]
+// @Router		/cms/{owner}/{repo}/{ref}/collections/{collection}/{entry}	[get]
 // @Security	bearerToken
 func getEntry(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()

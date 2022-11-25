@@ -68,6 +68,9 @@ github.com/rs/zerolog
 github.com/rs/zerolog/internal/cbor
 github.com/rs/zerolog/internal/json
 github.com/rs/zerolog/log
+# github.com/santhosh-tekuri/jsonschema/v5 v5.1.1
+## explicit; go 1.15
+github.com/santhosh-tekuri/jsonschema/v5
 # github.com/spf13/cobra v1.6.1
 ## explicit; go 1.15
 github.com/spf13/cobra
