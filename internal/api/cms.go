@@ -151,12 +151,12 @@ func delCollection(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
 	collectionName := slug.Make(collection)
-	path := filepath.Join(cmsConfig.Content.Dir, collectionName, ".gitkeep")
+	path := filepath.Join(cmsConfig.Content.Dir, collectionName)
 	commitMessage := fmt.Sprintf("feat(content): delete %s", collectionName)
 
-	err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, nil, commitMessage)
+	err := gh.DeleteFolder(ctx, accessToken, owner, repo, ref, path, commitMessage)
 	if err != nil {
-		errClientFailDeleteBlob().Log(err).Json(w)
+		errClientFailDeleteFolder().Log(err).Json(w)
 		return
 	}
 

@@ -151,3 +151,29 @@ func pushCommit(ctx context.Context, githubClient *github.Client, ref *github.Re
 	_, _, err = githubClient.Git.UpdateRef(ctx, owner, repo, ref, false)
 	return err
 }
+
+func DeleteFolder(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, commitMessage string) error {
+	githubClient := ghClient(ctx, accessToken)
+
+	_, rc, _, err := githubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
+		Ref: ref,
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, c := range rc {
+		if *c.Type == "file" {
+			_, _, err = githubClient.Repositories.DeleteFile(ctx, owner, repo, *c.Path, &github.RepositoryContentFileOptions{
+				Message: &commitMessage,
+				SHA:     c.SHA,
+				Branch:  &ref,
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
