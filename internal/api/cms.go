@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"path/filepath"
@@ -152,6 +153,11 @@ func delCollection(w http.ResponseWriter, r *http.Request) {
 
 	collectionName := slug.Make(collection)
 	path := filepath.Join(cmsConfig.ContentDir, collectionName)
+	if path == cmsConfig.ContentDir {
+		errClientFailDeleteFolder().Log(errors.New("missing collection name")).Json(w)
+		return
+	}
+
 	commitMessage := fmt.Sprintf("feat(content): delete %s", collectionName)
 
 	err := gh.DeleteFolder(ctx, accessToken, owner, repo, ref, path, commitMessage)

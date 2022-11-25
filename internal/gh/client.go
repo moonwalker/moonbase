@@ -163,15 +163,19 @@ func DeleteFolder(ctx context.Context, accessToken string, owner string, repo st
 	}
 
 	for _, c := range rc {
-		if *c.Type == "file" {
+		if *c.Type == "dir" {
+			err = DeleteFolder(ctx, accessToken, owner, repo, ref, *c.Path, commitMessage)
+		} else {
 			_, _, err = githubClient.Repositories.DeleteFile(ctx, owner, repo, *c.Path, &github.RepositoryContentFileOptions{
 				Message: &commitMessage,
 				SHA:     c.SHA,
 				Branch:  &ref,
 			})
-			if err != nil {
-				return err
-			}
+
+		}
+
+		if err != nil {
+			return err
 		}
 	}
 
