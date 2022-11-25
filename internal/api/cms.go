@@ -256,6 +256,27 @@ func getEntries(w http.ResponseWriter, r *http.Request) {
 // @Router		/cms/{owner}/{repo}/{ref}/collections/{collection}	[post]
 // @Security	bearerToken
 func postEntry(w http.ResponseWriter, r *http.Request) {
+	createOrUpdateEntry(w, r)
+}
+
+// @Summary		Update entry
+// @Tags		cms
+// @Accept		json
+// @Param		owner			path	string			true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string			true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string			true	"git ref (branch, tag, sha)"
+// @Param		collection		path	string			true	"collection"
+// @Param		entry			path	string			true	"entry"
+// @Param		payload			body	entryPayload	true	"entry payload"
+// @Success		200
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}/collections/{collection}/{entry}	[put]
+// @Security	bearerToken
+func putEntry(w http.ResponseWriter, r *http.Request) {
+	createOrUpdateEntry(w, r)
+}
+
+func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accessToken := accessTokenFromContext(ctx)
 
@@ -263,24 +284,31 @@ func postEntry(w http.ResponseWriter, r *http.Request) {
 	repo := chi.URLParam(r, "repo")
 	ref := chi.URLParam(r, "ref")
 	collection := chi.URLParam(r, "collection")
+	entry := chi.URLParam(r, "entry")
 
-	entry := &entryPayload{}
-	err := json.NewDecoder(r.Body).Decode(entry)
+	entryData := &entryPayload{}
+	err := json.NewDecoder(r.Body).Decode(entryData)
 	if err != nil {
 		errFailedDecReqBody().Log(err).Json(w)
 		return
 	}
+	if len(entryData.Name) == 0 {
+		entryData.Name = entry
+	}
+	if len(entryData.Name) == 0 {
+		errClientFailCommitBlob().Log(errors.New("missing entry name")).Json(w)
+	}
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
-	ext := filepath.Ext(entry.Name)
-	fn := strings.TrimSuffix(filepath.Base(entry.Name), ext)
+	ext := filepath.Ext(entryData.Name)
+	fn := strings.TrimSuffix(filepath.Base(entryData.Name), ext)
 	entryName := slug.Make(fn) + ext
 
 	path := filepath.Join(cmsConfig.Workdir, collection, entryName)
 	commitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, entryName)
 
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &entry.Contents, commitMessage)
+	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &entryData.Contents, commitMessage)
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
 		return
