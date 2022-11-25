@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	ContentDir string `json:"content_dir" yaml:"content_dir"`
+	Workdir string `json:"workdir" yaml:"workdir"`
 }
 
 func ParseConfig(path string, data []byte) *Config {

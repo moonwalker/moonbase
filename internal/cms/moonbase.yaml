@@ -1,2 +1,1 @@
-# default to root if empty
-content_dir: content
+workdir: content
