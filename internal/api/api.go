@@ -57,8 +57,9 @@ func Routes() chi.Router {
 			r.Delete("/cms/{owner}/{repo}/{ref}/collections/{collection}", delCollection)
 			// entries
 			r.Get("/cms/{owner}/{repo}/{ref}/collections/{collection}", getEntries)
-			r.Post("/cms/{owner}/{repo}/{ref}/collections/{collection}", postEntry)
 			r.Get("/cms/{owner}/{repo}/{ref}/collections/{collection}/{entry}", getEntry)
+			r.Post("/cms/{owner}/{repo}/{ref}/collections/{collection}", postEntry)
+			r.Put("/cms/{owner}/{repo}/{ref}/collections/{collection}/{entry}", putEntry)
 			r.Delete("/cms/{owner}/{repo}/{ref}/collections/{collection}/{entry}", delEntry)
 		})
 	})

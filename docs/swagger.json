@@ -381,6 +381,77 @@
                     }
                 }
             },
+            "put": {
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cms"
+                ],
+                "summary": "Update entry",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the account owner of the repository (the name is not case sensitive)",
+                        "name": "owner",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the name of the repository (the name is not case sensitive)",
+                        "name": "repo",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "git ref (branch, tag, sha)",
+                        "name": "ref",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "collection",
+                        "name": "collection",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "entry",
+                        "name": "entry",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "entry payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.entryPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorData"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "security": [
                     {
