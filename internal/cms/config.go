@@ -8,10 +8,7 @@ import (
 )
 
 type Config struct {
-	Content struct {
-		Dir string   `json:"dir"`
-		Ext []string `json:"ext"`
-	} `json:"content"`
+	ContentDir string `json:"content_dir" yaml:"content_dir"`
 }
 
 func ParseConfig(path string, data []byte) *Config {

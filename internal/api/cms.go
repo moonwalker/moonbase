@@ -65,7 +65,7 @@ func getCollections(w http.ResponseWriter, r *http.Request) {
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
-	repoContents, err := gh.GetTree(ctx, accessToken, owner, repo, ref, cmsConfig.Content.Dir)
+	repoContents, err := gh.GetTree(ctx, accessToken, owner, repo, ref, cmsConfig.ContentDir)
 	if err != nil {
 		errClientFailGetTree().Log(err).Json(w)
 		return
@@ -115,7 +115,7 @@ func postCollection(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
 	collectionName := slug.Make(collection.Name)
-	path := filepath.Join(cmsConfig.Content.Dir, collectionName, ".gitkeep")
+	path := filepath.Join(cmsConfig.ContentDir, collectionName, ".gitkeep")
 	commitMessage := fmt.Sprintf("feat(content): create %s", collectionName)
 	emptyContent := ""
 
@@ -151,7 +151,7 @@ func delCollection(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
 	collectionName := slug.Make(collection)
-	path := filepath.Join(cmsConfig.Content.Dir, collectionName)
+	path := filepath.Join(cmsConfig.ContentDir, collectionName)
 	commitMessage := fmt.Sprintf("feat(content): delete %s", collectionName)
 
 	err := gh.DeleteFolder(ctx, accessToken, owner, repo, ref, path, commitMessage)
@@ -187,7 +187,7 @@ func getEntries(w http.ResponseWriter, r *http.Request) {
 	collection := chi.URLParam(r, "collection")
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.Content.Dir, collection)
+	path := filepath.Join(cmsConfig.ContentDir, collection)
 
 	repoContents, err := gh.GetTree(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
@@ -244,7 +244,7 @@ func postEntry(w http.ResponseWriter, r *http.Request) {
 	fn := strings.TrimSuffix(filepath.Base(entry.Name), ext)
 	entryName := slug.Make(fn) + ext
 
-	path := filepath.Join(cmsConfig.Content.Dir, collection, entryName)
+	path := filepath.Join(cmsConfig.ContentDir, collection, entryName)
 	commitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, entryName)
 
 	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &entry.Contents, commitMessage)
@@ -280,7 +280,7 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 	entry := chi.URLParam(r, "entry")
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.Content.Dir, collection, entry)
+	path := filepath.Join(cmsConfig.ContentDir, collection, entry)
 
 	blob, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
@@ -315,7 +315,7 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 	entry := chi.URLParam(r, "entry")
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.Content.Dir, collection, entry)
+	path := filepath.Join(cmsConfig.ContentDir, collection, entry)
 	commitMessage := fmt.Sprintf("delete(%s): %s", collection, entry)
 
 	err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, nil, commitMessage)

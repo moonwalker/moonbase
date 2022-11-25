@@ -1,6 +1,3 @@
 {
-  "content": {
-    "dir": "content",
-    "ext": [".md", ".mdx", ".json"]
-  }
+  "content_dir": "content"
 }
