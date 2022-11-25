@@ -2,7 +2,6 @@ package gh
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 
 	"github.com/google/go-github/v48/github"
@@ -86,12 +85,12 @@ func GetBlob(ctx context.Context, accessToken string, owner string, repo string,
 		return nil, err
 	}
 
-	decodedBlob, err := base64.StdEncoding.DecodeString(*fc.Content)
+	decodedBlob, err := fc.GetContent()
 	if err != nil {
 		return nil, err
 	}
 
-	return decodedBlob, nil
+	return []byte(decodedBlob), nil
 }
 
 func CommitBlob(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, content *string, commitMessage string) error {
