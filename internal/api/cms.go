@@ -29,6 +29,12 @@ type entryPayload struct {
 	Contents string `json:"contents"`
 }
 
+type commitEntry struct {
+	Author  string `json:"author"`
+	Message string `json:"message"`
+	Date    string `json:"date"`
+}
+
 // config
 
 func getConfig(ctx context.Context, accessToken string, owner string, repo string, ref string) *cms.Config {
@@ -36,11 +42,32 @@ func getConfig(ctx context.Context, accessToken string, owner string, repo strin
 	return cms.ParseConfig(cmsConfigPath, data)
 }
 
-// dashboard
+// info
 
-func getDash(w http.ResponseWriter, r *http.Request) {
-	//
-	w.WriteHeader(http.StatusOK)
+func getInfo(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	accessToken := accessTokenFromContext(ctx)
+
+	owner := chi.URLParam(r, "owner")
+	repo := chi.URLParam(r, "repo")
+	ref := chi.URLParam(r, "ref")
+
+	rc, err := gh.GetCommits(ctx, accessToken, owner, repo, ref)
+	if err != nil {
+		errClientFailGetCommits().Log(err).Json(w)
+		return
+	}
+
+	changes := make([]*commitEntry, 0)
+	for _, c := range rc {
+		changes = append(changes, &commitEntry{
+			Author:  *c.Commit.Author.Name,
+			Message: *c.Commit.Message,
+			Date:    c.Commit.Author.Date.UTC().String(),
+		})
+	}
+
+	jsonResponse(w, http.StatusOK, changes)
 }
 
 // collections

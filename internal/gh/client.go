@@ -180,3 +180,18 @@ func DeleteFolder(ctx context.Context, accessToken string, owner string, repo st
 
 	return nil
 }
+
+func GetCommits(ctx context.Context, accessToken string, owner string, repo string, ref string) ([]*github.RepositoryCommit, error) {
+	rc, _, err := ghClient(ctx, accessToken).Repositories.ListCommits(ctx, owner, repo, &github.CommitsListOptions{
+		SHA: ref,
+		ListOptions: github.ListOptions{
+			Page:    1,
+			PerPage: 10,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return rc, nil
+}
