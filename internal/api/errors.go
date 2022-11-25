@@ -29,6 +29,7 @@ var (
 		1015: "failed to decrypt request body",
 		1016: "github client failed to commit blob",
 		1017: "github client failed to delete blob",
+		1018: "github client failed to delete folder",
 	}
 	errUnauthorized              = func() *errorData { return makeError(401, 1000) }
 	errNoAuthToken               = func() *errorData { return makeError(401, 1001) }
@@ -48,6 +49,7 @@ var (
 	errFailedDecReqBody          = func() *errorData { return makeError(500, 1015) }
 	errClientFailCommitBlob      = func() *errorData { return makeError(500, 1016) }
 	errClientFailDeleteBlob      = func() *errorData { return makeError(500, 1017) }
+	errClientFailDeleteFolder    = func() *errorData { return makeError(500, 1018) }
 )
 
 func makeError(statusCode, errorCode int) *errorData {
