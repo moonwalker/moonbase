@@ -32,11 +32,10 @@ func serveCmdRun(command *cobra.Command, args []string) error {
 	v := fmt.Sprintf("%d", httpPort)
 
 	if runtime.IsDev() {
-		k = "addr"
-		v = fmt.Sprintf("http://localhost:%d", httpPort)
+		k = "docs"
+		v = fmt.Sprintf("http://localhost:%d/docs", httpPort)
 	}
 
 	log.Info().Str(k, v).Msg("running")
-	srv := server.NewServer(&server.Options{Port: httpPort})
-	return srv.Listen()
+	return server.Listen(httpPort)
 }

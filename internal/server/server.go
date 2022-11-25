@@ -12,19 +12,7 @@ import (
 	"github.com/moonwalker/moonbase/internal/api"
 )
 
-type Options struct {
-	Port int
-}
-
-type Server struct {
-	*Options
-}
-
-func NewServer(options *Options) *Server {
-	return &Server{options}
-}
-
-func (s *Server) Listen() error {
+func Listen(port int) error {
 	r := chi.NewRouter()
 
 	r.Use(middleware.StripSlashes)
@@ -37,7 +25,7 @@ func (s *Server) Listen() error {
 
 	r.Mount("/", api.Routes())
 
-	addr := fmt.Sprintf(":%d", s.Options.Port)
+	addr := fmt.Sprintf(":%d", port)
 	return http.ListenAndServe(addr, r)
 }
 
