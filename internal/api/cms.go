@@ -260,6 +260,7 @@ func getEntries(w http.ResponseWriter, r *http.Request) {
 // @Param		repo			path	string			true	"the name of the repository (the name is not case sensitive)"
 // @Param		ref				path	string			true	"git ref (branch, tag, sha)"
 // @Param		collection		path	string			true	"collection"
+// @Param		save_schema		query	string			false	"generate and save the collection schema based on this entry contents"
 // @Param		payload			body	entryPayload	true	"entry payload"
 // @Success		200
 // @Failure		500	{object}	errorData
