@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi"
@@ -276,6 +277,7 @@ func postEntry(w http.ResponseWriter, r *http.Request) {
 // @Param		ref				path	string			true	"git ref (branch, tag, sha)"
 // @Param		collection		path	string			true	"collection"
 // @Param		entry			path	string			true	"entry"
+// @Param		save_schema		query	string			false	"generate and save the collection schema based on this entry contents"
 // @Param		payload			body	entryPayload	true	"entry payload"
 // @Success		200
 // @Failure		500	{object}	errorData
@@ -294,6 +296,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	ref := chi.URLParam(r, "ref")
 	collection := chi.URLParam(r, "collection")
 	entry := chi.URLParam(r, "entry")
+	save_schema, _ := strconv.ParseBool(r.FormValue("save_schema"))
 
 	entryData := &entryPayload{}
 	err := json.NewDecoder(r.Body).Decode(entryData)
@@ -328,6 +331,20 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errClientFailCommitBlob().Log(err).Json(w)
 		return
+	}
+
+	if save_schema {
+		schema, err := cms.GenerateSchema(entryData.Contents)
+		if err != nil {
+			errSchemaGenerationFailed().Log(err).Json(w)
+			return
+		}
+		schemaCommitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, jsonSchemaName)
+		err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &schema, schemaCommitMessage)
+		if err != nil {
+			errClientFailCommitBlob().Log(err).Json(w)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)

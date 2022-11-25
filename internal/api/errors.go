@@ -32,6 +32,7 @@ var (
 		1018: "github client failed to delete folder",
 		1019: "github client failed to get commits",
 		1020: "schema validation failed",
+		1021: "schema generation failed",
 	}
 	errUnauthorized              = func() *errorData { return makeError(401, 1000) }
 	errNoAuthToken               = func() *errorData { return makeError(401, 1001) }
@@ -54,6 +55,7 @@ var (
 	errClientFailDeleteFolder    = func() *errorData { return makeError(500, 1018) }
 	errClientFailGetCommits      = func() *errorData { return makeError(500, 1019) }
 	errSchemaValidationFailed    = func() *errorData { return makeError(500, 1020) }
+	errSchemaGenerationFailed    = func() *errorData { return makeError(500, 1021) }
 )
 
 func makeError(statusCode, errorCode int) *errorData {
