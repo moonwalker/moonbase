@@ -46,7 +46,7 @@ func GetUser(ctx context.Context, accessToken string) (*github.User, error) {
 	return user, err
 }
 
-func ListRepositories(ctx context.Context, accessToken string, page, perPage int, sort, direction string) ([]*github.Repository, int, error) {
+func ListRepositories(ctx context.Context, accessToken string, page, perPage int, sort, direction string) ([]*github.Repository, *github.Response, error) {
 	repos, resp, err := ghClient(ctx, accessToken).Repositories.List(ctx, "", &github.RepositoryListOptions{
 		Sort:      sort,
 		Direction: direction,
@@ -55,66 +55,66 @@ func ListRepositories(ctx context.Context, accessToken string, page, perPage int
 			PerPage: perPage,
 		},
 	})
-	return repos, resp.LastPage, err
+	return repos, resp, err
 }
 
-func ListBranches(ctx context.Context, accessToken string, owner, repo string) ([]*github.Branch, error) {
-	branches, _, err := ghClient(ctx, accessToken).Repositories.ListBranches(ctx, owner, repo, &github.BranchListOptions{})
-	return branches, err
+func ListBranches(ctx context.Context, accessToken string, owner, repo string) ([]*github.Branch, *github.Response, error) {
+	branches, resp, err := ghClient(ctx, accessToken).Repositories.ListBranches(ctx, owner, repo, &github.BranchListOptions{})
+	return branches, resp, err
 }
 
-func GetTree(ctx context.Context, accessToken string, owner string, repo string, branch string, path string) ([]*github.RepositoryContent, error) {
-	_, rc, _, err := ghClient(ctx, accessToken).Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
+func GetTree(ctx context.Context, accessToken string, owner string, repo string, branch string, path string) ([]*github.RepositoryContent, *github.Response, error) {
+	_, rc, resp, err := ghClient(ctx, accessToken).Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
 		Ref: branch,
 	})
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
-	return rc, nil
+	return rc, resp, nil
 }
 
-func GetBlob(ctx context.Context, accessToken string, owner string, repo string, ref, path string) ([]byte, error) {
+func GetBlob(ctx context.Context, accessToken string, owner string, repo string, ref, path string) ([]byte, *github.Response, error) {
 	if len(path) == 0 {
-		return nil, errors.New("path not provided")
+		return nil, nil, errors.New("path not provided")
 	}
 
-	fc, _, _, err := ghClient(ctx, accessToken).Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
+	fc, _, resp, err := ghClient(ctx, accessToken).Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
 		Ref: ref,
 	})
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 
 	decodedBlob, err := fc.GetContent()
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 
-	return []byte(decodedBlob), nil
+	return []byte(decodedBlob), resp, nil
 }
 
-func CommitBlob(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, content *string, commitMessage string) error {
+func CommitBlob(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, content *string, commitMessage string) (*github.Response, error) {
 	githubClient := ghClient(ctx, accessToken)
 
-	reference, _, err := githubClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+ref)
+	reference, resp, err := githubClient.Git.GetRef(ctx, owner, repo, "refs/heads/"+ref)
 	if err != nil {
-		return err
+		return resp, err
 	}
 
-	tree, err := getCommitTree(ctx, githubClient, owner, repo, *reference.Object.SHA, path, content)
+	tree, resp, err := getCommitTree(ctx, githubClient, owner, repo, *reference.Object.SHA, path, content)
 	if err != nil {
-		return err
+		return resp, err
 	}
 
-	if err := pushCommit(ctx, githubClient, reference, tree, owner, repo, commitMessage); err != nil {
-		return err
+	if resp, err := pushCommit(ctx, githubClient, reference, tree, owner, repo, commitMessage); err != nil {
+		return resp, err
 	}
 
-	return nil
+	return resp, nil
 }
 
 // getCommitTree generates the tree to commit based on the given files and the commit of the ref
-func getCommitTree(ctx context.Context, githubClient *github.Client, owner string, repo string, sha string, path string, content *string) (tree *github.Tree, err error) {
+func getCommitTree(ctx context.Context, githubClient *github.Client, owner string, repo string, sha string, path string, content *string) (*github.Tree, *github.Response, error) {
 	// Create a tree with what to commit.
 	entries := []*github.TreeEntry{
 		{
@@ -125,45 +125,43 @@ func getCommitTree(ctx context.Context, githubClient *github.Client, owner strin
 		},
 	}
 
-	tree, _, err = githubClient.Git.CreateTree(ctx, owner, repo, sha, entries)
-	return tree, err
+	return githubClient.Git.CreateTree(ctx, owner, repo, sha, entries)
 }
 
 // pushCommit creates the commit in the given reference using the given tree
-func pushCommit(ctx context.Context, githubClient *github.Client, ref *github.Reference, tree *github.Tree, owner string, repo string, commitMessage string) (err error) {
+func pushCommit(ctx context.Context, githubClient *github.Client, ref *github.Reference, tree *github.Tree, owner string, repo string, commitMessage string) (*github.Response, error) {
 	// Get the parent commit
-	parent, _, err := githubClient.Repositories.GetCommit(ctx, owner, repo, *ref.Object.SHA, nil)
+	parent, resp, err := githubClient.Repositories.GetCommit(ctx, owner, repo, *ref.Object.SHA, nil)
 	if err != nil {
-		return err
+		return resp, err
 	}
 	parent.Commit.SHA = parent.SHA
 
 	commit := &github.Commit{Message: &commitMessage, Tree: tree, Parents: []*github.Commit{parent.Commit}}
-	newCommit, _, err := githubClient.Git.CreateCommit(ctx, owner, repo, commit)
-
+	newCommit, resp, err := githubClient.Git.CreateCommit(ctx, owner, repo, commit)
 	if err != nil {
-		return err
+		return resp, err
 	}
 
 	// Attach the commit to the branch
 	ref.Object.SHA = newCommit.SHA
-	_, _, err = githubClient.Git.UpdateRef(ctx, owner, repo, ref, false)
-	return err
+	_, resp, err = githubClient.Git.UpdateRef(ctx, owner, repo, ref, false)
+	return resp, err
 }
 
-func DeleteFolder(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, commitMessage string) error {
+func DeleteFolder(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, commitMessage string) (*github.Response, error) {
 	githubClient := ghClient(ctx, accessToken)
 
-	_, rc, _, err := githubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
+	_, rc, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
 		Ref: ref,
 	})
 	if err != nil {
-		return err
+		return resp, err
 	}
 
 	for _, c := range rc {
 		if *c.Type == "dir" {
-			err = DeleteFolder(ctx, accessToken, owner, repo, ref, *c.Path, commitMessage)
+			resp, err = DeleteFolder(ctx, accessToken, owner, repo, ref, *c.Path, commitMessage)
 		} else {
 			_, _, err = githubClient.Repositories.DeleteFile(ctx, owner, repo, *c.Path, &github.RepositoryContentFileOptions{
 				Message: &commitMessage,
@@ -172,17 +170,16 @@ func DeleteFolder(ctx context.Context, accessToken string, owner string, repo st
 			})
 
 		}
-
 		if err != nil {
-			return err
+			return resp, err
 		}
 	}
 
-	return nil
+	return resp, nil
 }
 
-func GetCommits(ctx context.Context, accessToken string, owner string, repo string, ref string) ([]*github.RepositoryCommit, error) {
-	rc, _, err := ghClient(ctx, accessToken).Repositories.ListCommits(ctx, owner, repo, &github.CommitsListOptions{
+func GetCommits(ctx context.Context, accessToken string, owner string, repo string, ref string) ([]*github.RepositoryCommit, *github.Response, error) {
+	rc, resp, err := ghClient(ctx, accessToken).Repositories.ListCommits(ctx, owner, repo, &github.CommitsListOptions{
 		SHA: ref,
 		ListOptions: github.ListOptions{
 			Page:    1,
@@ -190,8 +187,8 @@ func GetCommits(ctx context.Context, accessToken string, owner string, repo stri
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
 
-	return rc, nil
+	return rc, resp, nil
 }

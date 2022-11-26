@@ -244,6 +244,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "string",
+                        "description": "generate and save the collection schema based on this entry contents",
+                        "name": "save_schema",
+                        "in": "query"
+                    },
+                    {
                         "description": "entry payload",
                         "name": "payload",
                         "in": "body",
@@ -438,6 +444,12 @@ const docTemplate = `{
                         "name": "entry",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "generate and save the collection schema based on this entry contents",
+                        "name": "save_schema",
+                        "in": "query"
                     },
                     {
                         "description": "entry payload",
@@ -954,6 +966,12 @@ const docTemplate = `{
                 "code": {
                     "type": "string"
                 },
+                "details": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "id": {
                     "type": "string"
                 },
@@ -962,6 +980,9 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                },
+                "statusCode": {
+                    "type": "integer"
                 }
             }
         },

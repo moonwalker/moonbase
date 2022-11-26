@@ -40,7 +40,7 @@ type commitEntry struct {
 // config
 
 func getConfig(ctx context.Context, accessToken string, owner string, repo string, ref string) *cms.Config {
-	data, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, cmsConfigPath)
+	data, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, cmsConfigPath)
 	return cms.ParseConfig(cmsConfigPath, data)
 }
 
@@ -48,7 +48,7 @@ func getConfig(ctx context.Context, accessToken string, owner string, repo strin
 
 func getSchema(ctx context.Context, accessToken string, owner string, repo string, ref string, collection string, workdir string) *cms.Schema {
 	p := filepath.Join(workdir, collection, jsonSchemaName)
-	data, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, p)
+	data, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, p)
 	return cms.NewSchema(data)
 }
 
@@ -62,9 +62,9 @@ func getInfo(w http.ResponseWriter, r *http.Request) {
 	repo := chi.URLParam(r, "repo")
 	ref := chi.URLParam(r, "ref")
 
-	rc, err := gh.GetCommits(ctx, accessToken, owner, repo, ref)
+	rc, resp, err := gh.GetCommits(ctx, accessToken, owner, repo, ref)
 	if err != nil {
-		errClientFailGetCommits().Log(err).Json(w)
+		errCmsGetCommits().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
@@ -103,9 +103,9 @@ func getCollections(w http.ResponseWriter, r *http.Request) {
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
-	repoContents, err := gh.GetTree(ctx, accessToken, owner, repo, ref, cmsConfig.Workdir)
+	repoContents, resp, err := gh.GetTree(ctx, accessToken, owner, repo, ref, cmsConfig.Workdir)
 	if err != nil {
-		errClientFailGetTree().Log(err).Json(w)
+		errReposGetTree().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
@@ -114,7 +114,6 @@ func getCollections(w http.ResponseWriter, r *http.Request) {
 		if *rc.Type == "dir" {
 			treeItems = append(treeItems, &treeItem{
 				Name: rc.Name,
-				// Path: rc.Path,
 				Type: rc.Type,
 				SHA:  rc.SHA,
 			})
@@ -146,7 +145,7 @@ func postCollection(w http.ResponseWriter, r *http.Request) {
 	collection := &collectionPayload{}
 	err := json.NewDecoder(r.Body).Decode(collection)
 	if err != nil {
-		errFailedDecReqBody().Log(err).Json(w)
+		errJsonDecode().Log(r, err).Json(w)
 		return
 	}
 
@@ -157,9 +156,9 @@ func postCollection(w http.ResponseWriter, r *http.Request) {
 	commitMessage := fmt.Sprintf("feat(content): create %s", collectionName)
 	emptyContent := ""
 
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &emptyContent, commitMessage)
+	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &emptyContent, commitMessage)
 	if err != nil {
-		errClientFailCommitBlob().Log(err).Json(w)
+		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
@@ -191,15 +190,15 @@ func delCollection(w http.ResponseWriter, r *http.Request) {
 	collectionName := slug.Make(collection)
 	path := filepath.Join(cmsConfig.Workdir, collectionName)
 	if path == cmsConfig.Workdir {
-		errClientFailDeleteFolder().Log(errors.New("missing collection name")).Json(w)
+		m := "missing collection name"
+		errCmsDeleteFolder().Details(m).Log(r, errors.New(m)).Json(w)
 		return
 	}
 
 	commitMessage := fmt.Sprintf("feat(content): delete %s", collectionName)
-
-	err := gh.DeleteFolder(ctx, accessToken, owner, repo, ref, path, commitMessage)
+	resp, err := gh.DeleteFolder(ctx, accessToken, owner, repo, ref, path, commitMessage)
 	if err != nil {
-		errClientFailDeleteFolder().Log(err).Json(w)
+		errCmsDeleteFolder().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
@@ -232,9 +231,9 @@ func getEntries(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 	path := filepath.Join(cmsConfig.Workdir, collection)
 
-	repoContents, err := gh.GetTree(ctx, accessToken, owner, repo, ref, path)
+	repoContents, resp, err := gh.GetTree(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
-		errClientFailGetTree().Log(err).Json(w)
+		errReposGetTree().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
@@ -302,14 +301,16 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	entryData := &entryPayload{}
 	err := json.NewDecoder(r.Body).Decode(entryData)
 	if err != nil {
-		errFailedDecReqBody().Log(err).Json(w)
+		errJsonDecode().Log(r, err).Json(w)
 		return
 	}
+
 	if len(entryData.Name) == 0 {
 		entryData.Name = entry
 	}
 	if len(entryData.Name) == 0 {
-		errClientFailCommitBlob().Log(errors.New("missing entry name")).Json(w)
+		m := "missing entry name"
+		errReposCommitBlob().Details(m).Log(r, errors.New(m)).Json(w)
 	}
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
@@ -317,7 +318,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.Workdir)
 	err = schema.Validate(entry)
 	if err != nil {
-		errSchemaValidationFailed().Log(err).Json(w)
+		errCmsSchemaValidation().Log(r, err).Json(w)
 		return
 	}
 
@@ -328,22 +329,22 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(cmsConfig.Workdir, collection, entryName)
 	commitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, entryName)
 
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &entryData.Contents, commitMessage)
+	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &entryData.Contents, commitMessage)
 	if err != nil {
-		errClientFailCommitBlob().Log(err).Json(w)
+		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
 	if save_schema {
 		schema, err := cms.GenerateSchema(entryData.Contents)
 		if err != nil {
-			errSchemaGenerationFailed().Log(err).Json(w)
+			errCmsSchemaGeneration().Log(r, err).Json(w)
 			return
 		}
 		schemaCommitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, jsonSchemaName)
-		err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &schema, schemaCommitMessage)
+		resp, err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &schema, schemaCommitMessage)
 		if err != nil {
-			errClientFailCommitBlob().Log(err).Json(w)
+			errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 			return
 		}
 	}
@@ -377,9 +378,9 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 	path := filepath.Join(cmsConfig.Workdir, collection, entry)
 
-	blob, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, path)
+	blob, resp, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
-		errClientFailGetBlob().Log(err).Json(w)
+		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
@@ -413,9 +414,9 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(cmsConfig.Workdir, collection, entry)
 	commitMessage := fmt.Sprintf("delete(%s): %s", collection, entry)
 
-	err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, nil, commitMessage)
+	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, nil, commitMessage)
 	if err != nil {
-		errClientFailDeleteBlob().Log(err).Json(w)
+		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 

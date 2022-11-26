@@ -2,80 +2,89 @@ package api
 
 import (
 	"net/http"
-	"strconv"
 
+	"github.com/go-chi/chi/middleware"
 	"github.com/rs/xid"
 
 	"github.com/moonwalker/moonbase/internal/log"
 )
 
+// API uses conventional HTTP response codes to indicate the success or failure of an API request.
+// Codes in the `2xx` range indicate success.
+// Codes in the `4xx` range indicate an error that failed given the information provided (e.g., a required parameter was omitted, etc.).
+// Codes in the `5xx` range indicate an error with servers (these are rare).
+
 var (
-	errMsg = map[int]string{
-		1000: "unauthorized",
-		1001: "auth token not provided",
-		1002: "invalid auth claims type",
-		1003: "failed to encode oauth state",
-		1004: "invalid oauth state secret",
-		1005: "failed to encrypt return url with oauth exchange code",
-		1006: "auth code missing",
-		1007: "failed to decrypt oauth exchange code",
-		1008: "oauth exchange failed",
-		1009: "github client failed to get user",
-		1010: "failed to encrypt token",
-		1011: "github client failed to get repositories",
-		1012: "github client failed to get branches",
-		1013: "github client failed to get tree",
-		1014: "github client failed to get blob",
-		1015: "failed to decrypt request body",
-		1016: "github client failed to commit blob",
-		1017: "github client failed to delete blob",
-		1018: "github client failed to delete folder",
-		1019: "github client failed to get commits",
-		1020: "schema validation failed",
-		1021: "schema generation failed",
-	}
-	errUnauthorized              = func() *errorData { return makeError(401, 1000) }
-	errNoAuthToken               = func() *errorData { return makeError(401, 1001) }
-	errInvalidAuthClaims         = func() *errorData { return makeError(500, 1002) }
-	errFailEncOAuthState         = func() *errorData { return makeError(500, 1003) }
-	errInvalidOAuthSecret        = func() *errorData { return makeError(500, 1004) }
-	errFailedEncRetURL           = func() *errorData { return makeError(500, 1005) }
-	errAuthCodeMissing           = func() *errorData { return makeError(500, 1006) }
-	errFailDecOAuthCode          = func() *errorData { return makeError(500, 1007) }
-	errFailOAuthExchange         = func() *errorData { return makeError(500, 1008) }
-	errClientFailGetUser         = func() *errorData { return makeError(500, 1009) }
-	errFailEncAccessToken        = func() *errorData { return makeError(500, 1010) }
-	errClientFailGetRepositories = func() *errorData { return makeError(404, 1011) }
-	errClientFailGetBranches     = func() *errorData { return makeError(404, 1012) }
-	errClientFailGetTree         = func() *errorData { return makeError(404, 1013) }
-	errClientFailGetBlob         = func() *errorData { return makeError(404, 1014) }
-	errFailedDecReqBody          = func() *errorData { return makeError(500, 1015) }
-	errClientFailCommitBlob      = func() *errorData { return makeError(500, 1016) }
-	errClientFailDeleteBlob      = func() *errorData { return makeError(500, 1017) }
-	errClientFailDeleteFolder    = func() *errorData { return makeError(500, 1018) }
-	errClientFailGetCommits      = func() *errorData { return makeError(500, 1019) }
-	errSchemaValidationFailed    = func() *errorData { return makeError(500, 1020) }
-	errSchemaGenerationFailed    = func() *errorData { return makeError(500, 1021) }
+	// common
+	errNotFound   = errf(404, "err_http_001", "requested resource not found")
+	errJsonDecode = errf(400, "err_json_001", "failed to decode request body")
+	// auth
+	errAuthNoToken     = errf(401, "err_auth_001", "auth token not provided")
+	errAuthBadToken    = errf(401, "err_auth_002", "invalid auth token")
+	errAuthBadClaims   = errf(400, "err_auth_003", "invalid auth claims")
+	errAuthEncState    = errf(400, "err_auth_004", "failed to encode oauth state")
+	errAuthBadSecret   = errf(400, "err_auth_005", "invalid oauth state secret")
+	errAuthEncRetURL   = errf(400, "err_auth_006", "failed to encrypt return url with oauth exchange code")
+	errAuthCodeMissing = errf(400, "err_auth_007", "auth code missing")
+	errAuthDecOAuth    = errf(400, "err_auth_008", "failed to decrypt oauth exchange code")
+	errAuthExchange    = errf(400, "err_auth_009", "oauth exchange failed")
+	errAuthGetUser     = errf(400, "err_auth_010", "failed to get user")
+	errAuthEncToken    = errf(400, "err_auth_011", "failed to encrypt token")
+	// repos
+	errReposGet         = errf(404, "err_repos_001", "failed to get repositories")
+	errReposGetBranches = errf(404, "err_repos_002", "failed to get branches")
+	errReposGetTree     = errf(404, "err_repos_003", "failed to get tree")
+	errReposGetBlob     = errf(404, "err_repos_004", "failed to get blob")
+	errReposCommitBlob  = errf(400, "err_repos_005", "failed to commit blob")
+	errReposDeleteBlob  = errf(400, "err_repos_006", "failed to delete blob")
+	// cms
+	errCmsGetCommits       = errf(404, "err_cms_001", "failed to get commits")
+	errCmsDeleteFolder     = errf(400, "err_cms_002", "failed to delete folder")
+	errCmsSchemaValidation = errf(400, "err_cms_003", "schema validation failed")
+	errCmsSchemaGeneration = errf(400, "err_cms_004", "schema generation failed")
 )
 
-func makeError(statusCode, errorCode int) *errorData {
-	return &errorData{xid.New().String(), strconv.Itoa(statusCode), strconv.Itoa(errorCode), errMsg[errorCode]}
-}
-
 type errorData struct {
-	ID      string `json:"id,omitempty"`
-	Status  string `json:"status"`
-	Code    string `json:"code,omitempty"`
-	Message string `json:"message"`
+	ID         string   `json:"id"`
+	StatusCode int      `json:"statusCode"`
+	StatusText string   `json:"statusText"`
+	Code       string   `json:"code"`
+	Message    string   `json:"message"`
+	Detailed   []string `json:"details,omitempty"`
 }
 
-func (e *errorData) Json(w http.ResponseWriter) *errorData {
-	status, _ := strconv.Atoi(e.Status)
-	jsonResponse(w, status, e)
+func errf(statusCode int, code, message string) func() *errorData {
+	return func() *errorData {
+		id := xid.New().String()
+		statusText := http.StatusText(statusCode)
+		return &errorData{id, statusCode, statusText, code, message, nil}
+	}
+}
+
+func (e *errorData) Details(a ...string) *errorData {
+	for _, arg := range a {
+		e.Detailed = append(e.Detailed, arg)
+	}
 	return e
 }
 
-func (e *errorData) Log(err error) *errorData {
-	log.Error(err).Str("id", e.ID).Msg(e.Message)
+func (e *errorData) Status(statusCode int) *errorData {
+	e.StatusCode = statusCode
+	return e
+}
+
+func (e *errorData) Json(w http.ResponseWriter) *errorData {
+	jsonResponse(w, e.StatusCode, e)
+	return e
+}
+
+func (e *errorData) Log(r *http.Request, err error) *errorData {
+	reqid := middleware.GetReqID(r.Context())
+	log.Error(err).
+		Str("reqid", reqid).
+		Str("id", e.ID).
+		Int("status", e.StatusCode).
+		Str("code", e.Code).
+		Msg(e.Message)
 	return e
 }

@@ -69,9 +69,9 @@ func getRepos(w http.ResponseWriter, r *http.Request) {
 	sort := r.FormValue("sort")
 	direction := r.FormValue("direction")
 
-	grs, lastPage, err := gh.ListRepositories(ctx, accessToken, page, perPage, sort, direction)
+	grs, resp, err := gh.ListRepositories(ctx, accessToken, page, perPage, sort, direction)
 	if err != nil {
-		errClientFailGetRepositories().Log(err).Json(w)
+		errReposGet().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
@@ -84,7 +84,7 @@ func getRepos(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	repoList := &repositoryList{LastPage: lastPage, Items: repoItems}
+	repoList := &repositoryList{LastPage: resp.LastPage, Items: repoItems}
 	jsonResponse(w, http.StatusOK, repoList)
 }
 
@@ -105,9 +105,9 @@ func getBranches(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
 
-	branches, err := gh.ListBranches(ctx, accessToken, owner, repo)
+	branches, resp, err := gh.ListBranches(ctx, accessToken, owner, repo)
 	if err != nil {
-		errClientFailGetBranches().Log(err).Json(w)
+		errReposGetBranches().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
@@ -147,9 +147,9 @@ func getTree(w http.ResponseWriter, r *http.Request) {
 	ref := chi.URLParam(r, "ref")
 	path := chi.URLParam(r, "*")
 
-	repoContents, err := gh.GetTree(ctx, accessToken, owner, repo, ref, path)
+	repoContents, resp, err := gh.GetTree(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
-		errClientFailGetTree().Log(err).Json(w)
+		errReposGetTree().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
@@ -187,9 +187,13 @@ func getBlob(w http.ResponseWriter, r *http.Request) {
 	ref := chi.URLParam(r, "ref")
 	path := chi.URLParam(r, "*")
 
-	blob, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, path)
+	blob, resp, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
-		errClientFailGetBlob().Log(err).Json(w)
+		e := errReposGetBlob()
+		if resp != nil {
+			e.Status(resp.StatusCode)
+		}
+		e.Log(r, err).Json(w)
 		return
 	}
 
@@ -221,14 +225,14 @@ func postBlob(w http.ResponseWriter, r *http.Request) {
 	data := &commitPayload{}
 	err := json.NewDecoder(r.Body).Decode(data)
 	if err != nil {
-		errFailedDecReqBody().Log(err).Json(w)
+		errJsonDecode().Log(r, err).Json(w)
 		return
 	}
 
 	contents := string(data.Contents)
-	err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &contents, string(data.CommitMessage))
+	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &contents, string(data.CommitMessage))
 	if err != nil {
-		errClientFailCommitBlob().Log(err).Json(w)
+		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
@@ -256,9 +260,9 @@ func delBlob(w http.ResponseWriter, r *http.Request) {
 	path := chi.URLParam(r, "*")
 
 	deleteMessage := fmt.Sprintf("delete %s", filepath.Base(path))
-	err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, nil, deleteMessage)
+	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, nil, deleteMessage)
 	if err != nil {
-		errClientFailDeleteBlob().Log(err).Json(w)
+		errReposDeleteBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 

@@ -235,6 +235,12 @@
                         "required": true
                     },
                     {
+                        "type": "string",
+                        "description": "generate and save the collection schema based on this entry contents",
+                        "name": "save_schema",
+                        "in": "query"
+                    },
+                    {
                         "description": "entry payload",
                         "name": "payload",
                         "in": "body",
@@ -429,6 +435,12 @@
                         "name": "entry",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "generate and save the collection schema based on this entry contents",
+                        "name": "save_schema",
+                        "in": "query"
                     },
                     {
                         "description": "entry payload",
@@ -945,6 +957,12 @@
                 "code": {
                     "type": "string"
                 },
+                "details": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "id": {
                     "type": "string"
                 },
@@ -953,6 +971,9 @@
                 },
                 "status": {
                     "type": "string"
+                },
+                "statusCode": {
+                    "type": "integer"
                 }
             }
         },

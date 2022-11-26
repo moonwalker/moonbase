@@ -45,12 +45,18 @@ definitions:
     properties:
       code:
         type: string
+      details:
+        items:
+          type: string
+        type: array
       id:
         type: string
       message:
         type: string
       status:
         type: string
+      statusCode:
+        type: integer
     type: object
   api.repositoryItem:
     properties:
@@ -268,6 +274,10 @@ paths:
         name: collection
         required: true
         type: string
+      - description: generate and save the collection schema based on this entry contents
+        in: query
+        name: save_schema
+        type: string
       - description: entry payload
         in: body
         name: payload
@@ -401,6 +411,10 @@ paths:
         in: path
         name: entry
         required: true
+        type: string
+      - description: generate and save the collection schema based on this entry contents
+        in: query
+        name: save_schema
         type: string
       - description: entry payload
         in: body

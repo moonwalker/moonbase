@@ -18,7 +18,7 @@ import (
 	"github.com/moonwalker/moonbase/internal/jwt"
 )
 
-// testing the flow:
+// test the flow:
 // http://localhost:8080/login/github?returnURL=/login/github/authenticate
 
 type ctxKey int
@@ -46,7 +46,7 @@ type User struct {
 func githubAuth(w http.ResponseWriter, r *http.Request) {
 	state, err := encodeState(r)
 	if err != nil {
-		errFailEncOAuthState().Log(err).Json(w)
+		errAuthEncState().Log(r, err).Json(w)
 		return
 	}
 
@@ -58,14 +58,14 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 	secret, returnURL := decodeState(r)
 	if secret != oauthStateSecret {
 		err := fmt.Errorf("expected: %s actual: %s", oauthStateSecret, secret)
-		errInvalidOAuthSecret().Log(err).Json(w)
+		errAuthBadSecret().Log(r, err).Json(w)
 		return
 	}
 
 	code := r.FormValue("code")
 	url, err := returnURLWithCode(returnURL, code, retUrlCodePath)
 	if err != nil {
-		errFailedEncRetURL().Log(err).Json(w)
+		errAuthEncRetURL().Log(r, err).Json(w)
 		return
 	}
 
@@ -78,32 +78,32 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 	if code == "" {
 		code = chi.URLParam(r, "code")
 		if code == "" {
-			jsonResponse(w, http.StatusInternalServerError, errAuthCodeMissing)
+			errAuthCodeMissing().Log(r, nil).Json(w)
 			return
 		}
 	}
 
 	decoded, err := decryptExchangeCode(code)
 	if err != nil {
-		errFailDecOAuthCode().Log(err).Json(w)
+		errAuthDecOAuth().Log(r, err).Json(w)
 		return
 	}
 
 	token, err := gh.Exchange(decoded)
 	if err != nil {
-		errFailOAuthExchange().Log(err).Json(w)
+		errAuthExchange().Log(r, err).Json(w)
 		return
 	}
 
 	ghUser, err := gh.GetUser(r.Context(), token)
 	if err != nil {
-		errClientFailGetUser().Log(err).Json(w)
+		errAuthGetUser().Log(r, err).Json(w)
 		return
 	}
 
 	et, err := encryptAccessToken(token)
 	if err != nil {
-		errFailEncAccessToken().Log(err).Json(w)
+		errAuthEncToken().Log(r, err).Json(w)
 		return
 	}
 
@@ -196,19 +196,19 @@ func withUser(next http.Handler) http.Handler {
 			tokenString = bearer[7:]
 		}
 		if len(tokenString) == 0 {
-			errNoAuthToken().Json(w)
+			errAuthNoToken().Json(w)
 			return
 		}
 
 		token, err := jwt.VerifyAndDecrypt(env.JweKey, env.JwtKey, tokenString)
 		if err != nil {
-			errUnauthorized().Json(w)
+			errAuthBadToken().Json(w)
 			return
 		}
 
 		authClaims, ok := token.Claims.(*jwt.AuthClaims)
 		if !ok {
-			errInvalidAuthClaims().Json(w)
+			errAuthBadClaims().Json(w)
 			return
 		}
 
