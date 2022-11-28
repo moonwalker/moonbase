@@ -252,7 +252,7 @@ func getEntries(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, http.StatusOK, treeItems)
 }
 
-// @Summary		Create or Update entry
+// @Summary		Create entry
 // @Tags		cms
 // @Accept		json
 // @Param		owner			path	string			true	"the account owner of the repository (the name is not case sensitive)"
