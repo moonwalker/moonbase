@@ -315,7 +315,12 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
 	schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.Workdir)
-	err = schema.Validate(entry)
+	var v interface{}
+	if err := json.Unmarshal([]byte(entryData.Contents), &v); err != nil {
+		errCmsSchemaValidation().Log(r, err).Json(w)
+		return
+	}
+	err = schema.Validate(v)
 	if err != nil {
 		errCmsSchemaValidation().Log(r, err).Json(w)
 		return
