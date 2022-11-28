@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi"
@@ -27,8 +26,9 @@ type collectionPayload struct {
 }
 
 type entryPayload struct {
-	Name     string `json:"name"`
-	Contents string `json:"contents"`
+	Name       string `json:"name"`
+	Contents   string `json:"contents"`
+	SaveSchema bool   `json:"save_schema"`
 }
 
 type commitEntry struct {
@@ -296,7 +296,6 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	ref := chi.URLParam(r, "ref")
 	collection := chi.URLParam(r, "collection")
 	entry := chi.URLParam(r, "entry")
-	save_schema, _ := strconv.ParseBool(r.FormValue("save_schema"))
 
 	entryData := &entryPayload{}
 	err := json.NewDecoder(r.Body).Decode(entryData)
@@ -335,14 +334,15 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if save_schema {
+	if entryData.SaveSchema {
 		schema, err := cms.GenerateSchema(entryData.Contents)
 		if err != nil {
 			errCmsSchemaGeneration().Log(r, err).Json(w)
 			return
 		}
+		schemaPath := filepath.Join(cmsConfig.Workdir, collection, jsonSchemaName)
 		schemaCommitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, jsonSchemaName)
-		resp, err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &schema, schemaCommitMessage)
+		resp, err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, schemaPath, &schema, schemaCommitMessage)
 		if err != nil {
 			errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 			return
