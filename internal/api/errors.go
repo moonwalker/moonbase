@@ -42,6 +42,7 @@ var (
 	errCmsDeleteFolder     = errf(400, "err_cms_002", "failed to delete folder")
 	errCmsSchemaValidation = errf(400, "err_cms_003", "schema validation failed")
 	errCmsSchemaGeneration = errf(400, "err_cms_004", "schema generation failed")
+	errCmsGetComponents    = errf(404, "err_cms_005", "failed to get components")
 )
 
 type errorData struct {

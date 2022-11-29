@@ -192,3 +192,36 @@ func GetCommits(ctx context.Context, accessToken string, owner string, repo stri
 
 	return rc, resp, nil
 }
+
+func GetContentsRecursive(ctx context.Context, accessToken string, owner string, repo string, ref string, path string) ([]*github.RepositoryContent, *github.Response, error) {
+	githubClient := ghClient(ctx, accessToken)
+	return getContentsRecursive(ctx, githubClient, owner, repo, ref, path)
+}
+
+func getContentsRecursive(ctx context.Context, githubClient *github.Client, owner string, repo string, ref string, path string) ([]*github.RepositoryContent, *github.Response, error) {
+	_, dc, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
+		Ref: ref,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	rcs := make([]*github.RepositoryContent, 0)
+	for _, te := range dc {
+		if *te.Type == "dir" {
+			srcs, resp, err := getContentsRecursive(ctx, githubClient, owner, repo, ref, *te.Path)
+			if err != nil {
+				return nil, resp, err
+			}
+			rcs = append(rcs, srcs...)
+		} else {
+			rc, _, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, *te.Path, &github.RepositoryContentGetOptions{})
+			if err != nil {
+				return nil, resp, err
+			}
+			rcs = append(rcs, rc)
+		}
+	}
+
+	return rcs, resp, nil
+}
