@@ -314,16 +314,18 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
-	schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.ContentDir)
-	var v interface{}
-	if err := json.Unmarshal([]byte(entryData.Contents), &v); err != nil {
-		errCmsSchemaValidation().Log(r, err).Json(w)
-		return
-	}
-	err = schema.Validate(v)
-	if err != nil {
-		errCmsSchemaValidation().Log(r, err).Json(w)
-		return
+	if !entryData.SaveSchema {
+		schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.Workdir)
+		var v interface{}
+		if err := json.Unmarshal([]byte(entryData.Contents), &v); err != nil {
+			errCmsSchemaValidation().Log(r, err).Json(w)
+			return
+		}
+		err = schema.Validate(v)
+		if err != nil {
+			errCmsSchemaValidation().Log(r, err).Json(w)
+			return
+		}
 	}
 
 	ext := filepath.Ext(entryData.Name)
