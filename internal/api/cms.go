@@ -103,7 +103,7 @@ func getCollections(w http.ResponseWriter, r *http.Request) {
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
-	repoContents, resp, err := gh.GetTree(ctx, accessToken, owner, repo, ref, cmsConfig.Workdir)
+	repoContents, resp, err := gh.GetTree(ctx, accessToken, owner, repo, ref, cmsConfig.ContentDir)
 	if err != nil {
 		errReposGetTree().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
@@ -152,7 +152,7 @@ func postCollection(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
 	collectionName := slug.Make(collection.Name)
-	path := filepath.Join(cmsConfig.Workdir, collectionName, ".gitkeep")
+	path := filepath.Join(cmsConfig.ContentDir, collectionName, ".gitkeep")
 	commitMessage := fmt.Sprintf("feat(content): create %s", collectionName)
 	emptyContent := ""
 
@@ -188,8 +188,8 @@ func delCollection(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
 	collectionName := slug.Make(collection)
-	path := filepath.Join(cmsConfig.Workdir, collectionName)
-	if path == cmsConfig.Workdir {
+	path := filepath.Join(cmsConfig.ContentDir, collectionName)
+	if path == cmsConfig.ContentDir {
 		m := "missing collection name"
 		errCmsDeleteFolder().Details(m).Log(r, errors.New(m)).Json(w)
 		return
@@ -229,7 +229,7 @@ func getEntries(w http.ResponseWriter, r *http.Request) {
 	collection := chi.URLParam(r, "collection")
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.Workdir, collection)
+	path := filepath.Join(cmsConfig.ContentDir, collection)
 
 	repoContents, resp, err := gh.GetTree(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
@@ -314,7 +314,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
-	schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.Workdir)
+	schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.ContentDir)
 	var v interface{}
 	if err := json.Unmarshal([]byte(entryData.Contents), &v); err != nil {
 		errCmsSchemaValidation().Log(r, err).Json(w)
@@ -330,7 +330,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	fn := strings.TrimSuffix(filepath.Base(entryData.Name), ext)
 	entryName := slug.Make(fn) + ext
 
-	path := filepath.Join(cmsConfig.Workdir, collection, entryName)
+	path := filepath.Join(cmsConfig.ContentDir, collection, entryName)
 	commitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, entryName)
 
 	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &entryData.Contents, commitMessage)
@@ -345,7 +345,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 			errCmsSchemaGeneration().Log(r, err).Json(w)
 			return
 		}
-		schemaPath := filepath.Join(cmsConfig.Workdir, collection, jsonSchemaName)
+		schemaPath := filepath.Join(cmsConfig.ContentDir, collection, jsonSchemaName)
 		schemaCommitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, jsonSchemaName)
 		resp, err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, schemaPath, &schema, schemaCommitMessage)
 		if err != nil {
@@ -381,7 +381,7 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 	entry := chi.URLParam(r, "entry")
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.Workdir, collection, entry)
+	path := filepath.Join(cmsConfig.ContentDir, collection, entry)
 
 	blob, resp, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
@@ -416,7 +416,7 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 	entry := chi.URLParam(r, "entry")
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.Workdir, collection, entry)
+	path := filepath.Join(cmsConfig.ContentDir, collection, entry)
 	commitMessage := fmt.Sprintf("delete(%s): %s", collection, entry)
 
 	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, nil, commitMessage)
@@ -426,4 +426,10 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// components
+
+func getComponents(w http.ResponseWriter, r *http.Request) {
+	//
 }

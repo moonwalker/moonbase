@@ -213,7 +213,7 @@ const docTemplate = `{
                 "tags": [
                     "cms"
                 ],
-                "summary": "Create or Update entry",
+                "summary": "Create entry",
                 "parameters": [
                     {
                         "type": "string",
@@ -957,6 +957,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "save_schema": {
+                    "type": "boolean"
                 }
             }
         },
@@ -978,11 +981,11 @@ const docTemplate = `{
                 "message": {
                     "type": "string"
                 },
-                "status": {
-                    "type": "string"
-                },
                 "statusCode": {
                     "type": "integer"
+                },
+                "statusText": {
+                    "type": "string"
                 }
             }
         },

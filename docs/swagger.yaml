@@ -40,6 +40,8 @@ definitions:
         type: string
       name:
         type: string
+      save_schema:
+        type: boolean
     type: object
   api.errorData:
     properties:
@@ -53,10 +55,10 @@ definitions:
         type: string
       message:
         type: string
-      status:
-        type: string
       statusCode:
         type: integer
+      statusText:
+        type: string
     type: object
   api.repositoryItem:
     properties:
@@ -293,7 +295,7 @@ paths:
             $ref: '#/definitions/api.errorData'
       security:
       - bearerToken: []
-      summary: Create or Update entry
+      summary: Create entry
       tags:
       - cms
   /cms/{owner}/{repo}/{ref}/collections/{collection}/{entry}:
