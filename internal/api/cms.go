@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -433,5 +434,42 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 // components
 
 func getComponents(w http.ResponseWriter, r *http.Request) {
-	//
+	ctx := r.Context()
+	accessToken := accessTokenFromContext(ctx)
+
+	owner := chi.URLParam(r, "owner")
+	repo := chi.URLParam(r, "repo")
+	ref := chi.URLParam(r, "ref")
+
+	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
+	componentsPath := getDir(cmsConfig.Components.Entry)
+	rcs, resp, err := gh.GetContentsRecursive(ctx, accessToken, owner, repo, ref, componentsPath)
+	if err != nil {
+		errCmsGetComponents().Status(resp.StatusCode).Log(r, err).Json(w)
+		return
+	}
+
+	componentItems := make([]*componentItem, 0)
+	for _, rc := range rcs {
+		contentBytes, err := base64.StdEncoding.DecodeString(*rc.Content)
+		if err != nil {
+			errCmsGetComponents().Status(http.StatusInternalServerError).Log(r, err).Json(w)
+			return
+		}
+		componentItems = append(componentItems, &componentItem{
+			Path:    rc.Path,
+			Content: contentBytes,
+		})
+	}
+
+	jsonResponse(w, http.StatusOK, componentItems)
+}
+
+// helpers
+
+func getDir(s string) string {
+	if len(filepath.Ext(s)) > 0 {
+		return filepath.Dir(s)
+	}
+	return s
 }
