@@ -303,12 +303,6 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "generate and save the collection schema based on this entry contents",
-                        "name": "save_schema",
-                        "in": "query"
-                    },
-                    {
                         "description": "entry payload",
                         "name": "payload",
                         "in": "body",
@@ -505,12 +499,6 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "generate and save the collection schema based on this entry contents",
-                        "name": "save_schema",
-                        "in": "query"
-                    },
-                    {
                         "description": "entry payload",
                         "name": "payload",
                         "in": "body",
@@ -633,15 +621,21 @@ const docTemplate = `{
                         "name": "ref",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "bundle components (true, false, 0 or 1)",
+                        "name": "bundle",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.componentItem"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
                             }
                         }
                     },
@@ -1078,20 +1072,6 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
-                }
-            }
-        },
-        "api.componentItem": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "path": {
-                    "type": "string"
                 }
             }
         },

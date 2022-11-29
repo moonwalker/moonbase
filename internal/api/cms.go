@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi"
@@ -271,7 +272,6 @@ func getEntries(w http.ResponseWriter, r *http.Request) {
 // @Param		repo			path	string			true	"the name of the repository (the name is not case sensitive)"
 // @Param		ref				path	string			true	"git ref (branch, tag, sha)"
 // @Param		collection		path	string			true	"collection"
-// @Param		save_schema		query	string			false	"generate and save the collection schema based on this entry contents"
 // @Param		payload			body	entryPayload	true	"entry payload"
 // @Success		200
 // @Failure		500	{object}	errorData
@@ -289,7 +289,6 @@ func postEntry(w http.ResponseWriter, r *http.Request) {
 // @Param		ref				path	string			true	"git ref (branch, tag, sha)"
 // @Param		collection		path	string			true	"collection"
 // @Param		entry			path	string			true	"entry"
-// @Param		save_schema		query	string			false	"generate and save the collection schema based on this entry contents"
 // @Param		payload			body	entryPayload	true	"entry payload"
 // @Success		200
 // @Failure		500	{object}	errorData
@@ -451,7 +450,8 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 // @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
 // @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
 // @Param		ref				path	string	true	"git ref (branch, tag, sha)"
-// @Success		200	{object}	[]componentItem
+// @Param		bundle			query	string	false	"bundle components (true, false, 0 or 1)"
+// @Success		200	{object}	map[string]string
 // @Failure		500	{object}	errorData
 // @Router		/cms/{owner}/{repo}/{ref}/components	[get]
 // @Security	bearerToken
@@ -462,26 +462,35 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
 	ref := chi.URLParam(r, "ref")
+	bundle, _ := strconv.ParseBool(r.FormValue("bundle"))
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
+
 	rcs, resp, err := gh.GetContentsRecursive(ctx, accessToken, owner, repo, ref, cmsConfig.Components.EntryDir())
 	if err != nil {
 		errCmsGetComponents().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
-	componentItems := make([]*componentItem, 0)
+	componentsTree := make(map[string]string)
 	for _, rc := range rcs {
 		contentBytes, err := base64.StdEncoding.DecodeString(*rc.Content)
 		if err != nil {
 			errCmsGetComponents().Status(http.StatusInternalServerError).Log(r, err).Json(w)
 			return
 		}
-		componentItems = append(componentItems, &componentItem{
-			Path:    rc.Path,
-			Content: contentBytes,
-		})
+		componentsTree[*rc.Path] = string(contentBytes)
 	}
 
-	jsonResponse(w, http.StatusOK, componentItems)
+	if bundle {
+		bundle, err := cms.BundleComponents(componentsTree, cmsConfig.Components, false, false)
+		if err != nil {
+			errCmsGetComponents().Status(http.StatusInternalServerError).Log(r, err).Json(w)
+			return
+		}
+		jsonResponse(w, http.StatusOK, bundle)
+		return
+	}
+
+	jsonResponse(w, http.StatusOK, componentsTree)
 }

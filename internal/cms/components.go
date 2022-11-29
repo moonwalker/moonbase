@@ -21,9 +21,13 @@ func compsPlugin(tree map[string]string) api.Plugin {
 						// path = "/" + args.Path
 					}
 
+					if len(filepath.Ext(path)) == 0 {
+						path += "/index.js"
+					}
+
 					if args.Kind == api.ResolveJSImportStatement {
 						dir := filepath.Dir(args.Importer)
-						path = filepath.Join(dir, args.Path)
+						path = filepath.Join(dir, path)
 					}
 
 					return api.OnResolveResult{
@@ -34,6 +38,16 @@ func compsPlugin(tree map[string]string) api.Plugin {
 			build.OnLoad(api.OnLoadOptions{Filter: `.*`, Namespace: "comps-ns"},
 				func(args api.OnLoadArgs) (api.OnLoadResult, error) {
 					contents := tree[args.Path]
+
+					if filepath.Ext(args.Path) == ".css" {
+						contents = "/* css */"
+						fmt.Println(contents)
+					}
+
+					if len(contents) == 0 {
+						contents = "/* external */"
+					}
+
 					return api.OnLoadResult{
 						Contents: &contents,
 						Loader:   api.LoaderDefault,
@@ -43,16 +57,14 @@ func compsPlugin(tree map[string]string) api.Plugin {
 	}
 }
 
-func BundleComponents(tree map[string]string, external []string, preserveJSX bool, minify bool) (string, error) {
-	var entry string
-	for k := range tree {
-		entry = k
-		break
-	}
+func BundleComponents(tree map[string]string, config compsConfig, preserveJSX bool, minify bool) (string, error) {
+
+	// TODO: this needs to be improved
+	entry := config.EntryDir() + "/index.js"
 
 	opts := api.BuildOptions{
 		EntryPoints: []string{entry},
-		External:    external,
+		External:    config.Dependencies,
 		Loader: map[string]api.Loader{
 			".js": api.LoaderJSX,
 		},
@@ -76,9 +88,9 @@ func BundleComponents(tree map[string]string, external []string, preserveJSX boo
 	if len(result.Errors) > 0 {
 		esb := new(strings.Builder)
 		for _, e := range result.Errors {
-			fmt.Fprintf(esb, "%s", e.Text)
+			fmt.Fprintf(esb, "%s; ", e.Text)
 		}
-		return "", errors.New(esb.String())
+		return "", errors.New(strings.TrimSpace(esb.String()))
 	}
 
 	rsb := new(strings.Builder)

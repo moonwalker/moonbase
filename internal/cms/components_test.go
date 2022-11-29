@@ -14,7 +14,7 @@ var tree = map[string]string{
 func TestBundleComponents(t *testing.T) {
 	data, _ := os.ReadFile(yamlPath)
 	config := ParseConfig(yamlPath, data)
-	res, err := BundleComponents(tree, config.Components.Dependencies, false, false)
+	res, err := BundleComponents(tree, config.Components, false, false)
 	if err != nil {
 		t.Error(err)
 	}

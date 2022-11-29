@@ -48,11 +48,6 @@ type commitPayload struct {
 	CommitMessage string `json:"commitMessage"`
 }
 
-type componentItem struct {
-	Path    *string `json:"path"`
-	Content []byte  `json:"content"`
-}
-
 // @Summary		Get repositories
 // @Tags		repos
 // @Accept		json

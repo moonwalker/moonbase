@@ -43,15 +43,6 @@ definitions:
           type: integer
         type: array
     type: object
-  api.componentItem:
-    properties:
-      content:
-        items:
-          type: integer
-        type: array
-      path:
-        type: string
-    type: object
   api.entryPayload:
     properties:
       contents:
@@ -332,10 +323,6 @@ paths:
         name: collection
         required: true
         type: string
-      - description: generate and save the collection schema based on this entry contents
-        in: query
-        name: save_schema
-        type: string
       - description: entry payload
         in: body
         name: payload
@@ -470,10 +457,6 @@ paths:
         name: entry
         required: true
         type: string
-      - description: generate and save the collection schema based on this entry contents
-        in: query
-        name: save_schema
-        type: string
       - description: entry payload
         in: body
         name: payload
@@ -512,15 +495,19 @@ paths:
         name: ref
         required: true
         type: string
+      - description: bundle components (true, false, 0 or 1)
+        in: query
+        name: bundle
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/api.componentItem'
-            type: array
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal Server Error
           schema:
