@@ -1,6 +1,6 @@
 contents: content # default to root if empty
 
 components:
-  entry: src/components
+  entry: src/components/index.js
   dependencies:
     - next
