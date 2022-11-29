@@ -27,3 +27,11 @@ func ParseConfig(path string, data []byte) *Config {
 	}
 	return cfg
 }
+
+// entry can be dir or file, this always returns the dir
+func (c *compsConfig) EntryDir() string {
+	if len(filepath.Ext(c.Entry)) > 0 {
+		return filepath.Dir(c.Entry)
+	}
+	return c.Entry
+}

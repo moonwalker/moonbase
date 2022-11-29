@@ -55,6 +55,17 @@ func getSchema(ctx context.Context, accessToken string, owner string, repo strin
 
 // info
 
+// @Summary		Get info
+// @Tags		cms
+// @Accept		json
+// @Produce		json
+// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
+// @Success		200	{object}	[]commitEntry
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}	[get]
+// @Security	bearerToken
 func getInfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accessToken := accessTokenFromContext(ctx)
@@ -433,6 +444,17 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 
 // components
 
+// @Summary		Get components
+// @Tags		cms
+// @Accept		json
+// @Produce		json
+// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
+// @Success		200	{object}	[]componentItem
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}/components	[get]
+// @Security	bearerToken
 func getComponents(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accessToken := accessTokenFromContext(ctx)
@@ -442,8 +464,7 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 	ref := chi.URLParam(r, "ref")
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	componentsPath := getDir(cmsConfig.Components.Entry)
-	rcs, resp, err := gh.GetContentsRecursive(ctx, accessToken, owner, repo, ref, componentsPath)
+	rcs, resp, err := gh.GetContentsRecursive(ctx, accessToken, owner, repo, ref, cmsConfig.Components.EntryDir())
 	if err != nil {
 		errCmsGetComponents().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
@@ -463,13 +484,4 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(w, http.StatusOK, componentItems)
-}
-
-// helpers
-
-func getDir(s string) string {
-	if len(filepath.Ext(s)) > 0 {
-		return filepath.Dir(s)
-	}
-	return s
 }
