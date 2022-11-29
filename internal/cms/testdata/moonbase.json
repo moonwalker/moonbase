@@ -1,7 +1,7 @@
 {
   "contents": "content",
   "components": {
-    "entry": "src/components/index.js",
+    "entry": "src/components",
     "dependencies": [
       "next"
     ]

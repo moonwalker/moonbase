@@ -9,51 +9,54 @@ import (
 	"github.com/evanw/esbuild/pkg/api"
 )
 
-var tree = map[string]string{
-	"/src/components/index.js": "import { Foo } from './foo.js'\nexport const Greet = () => <h1>Hello, world from {Foo}!</h1>",
-	"/src/components/foo.js":   "export const Foo = { bar: 'baz' }",
+func compsPlugin(tree map[string]string) api.Plugin {
+	return api.Plugin{
+		Name: "comps",
+		Setup: func(build api.PluginBuild) {
+			build.OnResolve(api.OnResolveOptions{Filter: `.*`},
+				func(args api.OnResolveArgs) (api.OnResolveResult, error) {
+					path := args.Path
+
+					if args.Kind == api.ResolveEntryPoint {
+						// path = "/" + args.Path
+					}
+
+					if args.Kind == api.ResolveJSImportStatement {
+						dir := filepath.Dir(args.Importer)
+						path = filepath.Join(dir, args.Path)
+					}
+
+					return api.OnResolveResult{
+						Path:      path,
+						Namespace: "comps-ns",
+					}, nil
+				})
+			build.OnLoad(api.OnLoadOptions{Filter: `.*`, Namespace: "comps-ns"},
+				func(args api.OnLoadArgs) (api.OnLoadResult, error) {
+					contents := tree[args.Path]
+					return api.OnLoadResult{
+						Contents: &contents,
+						Loader:   api.LoaderDefault,
+					}, nil
+				})
+		},
+	}
 }
 
-var compsPlugin = api.Plugin{
-	Name: "comps",
-	Setup: func(build api.PluginBuild) {
-		build.OnResolve(api.OnResolveOptions{Filter: `.*`},
-			func(args api.OnResolveArgs) (api.OnResolveResult, error) {
-				var path string
+func BundleComponents(tree map[string]string, external []string, preserveJSX bool, minify bool) (string, error) {
+	var entry string
+	for k := range tree {
+		entry = k
+		break
+	}
 
-				if args.Kind == api.ResolveEntryPoint {
-					path = "/" + args.Path
-				}
-
-				if args.Kind == api.ResolveJSImportStatement {
-					dir := filepath.Dir(args.Importer)
-					path = filepath.Join(dir, args.Path)
-				}
-
-				return api.OnResolveResult{
-					Path:      path,
-					Namespace: "ns-comps",
-				}, nil
-			})
-		build.OnLoad(api.OnLoadOptions{Filter: `.*`, Namespace: "ns-comps"},
-			func(args api.OnLoadArgs) (api.OnLoadResult, error) {
-				contents := tree[args.Path]
-				return api.OnLoadResult{
-					Contents: &contents,
-					Loader:   api.LoaderDefault,
-				}, nil
-			})
-	},
-}
-
-func BundleComponents(enyry string, external []string, preserveJSX bool, minify bool) (string, error) {
 	opts := api.BuildOptions{
-		EntryPoints: []string{enyry},
+		EntryPoints: []string{entry},
 		External:    external,
 		Loader: map[string]api.Loader{
 			".js": api.LoaderJSX,
 		},
-		Plugins: []api.Plugin{compsPlugin},
+		Plugins: []api.Plugin{compsPlugin(tree)},
 		Format:  api.FormatESModule,
 		Bundle:  true,
 	}
