@@ -496,7 +496,7 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 		pkgJsonData, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, cms.PackageJSONFile)
 		pkgJson := cms.ParsePackageJSON(pkgJsonData)
 
-		w.Header().Set("Cache-Control", fmt.Sprintf("s-maxage=%.f", cacheComponents.Seconds()))
+		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%.f", cacheComponents.Seconds()))
 		jsonResponse(w, http.StatusOK, map[string]interface{}{
 			"files": files,
 			"entry": cmsConfig.Components.Entry,
