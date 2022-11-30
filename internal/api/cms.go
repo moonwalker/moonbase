@@ -19,8 +19,9 @@ import (
 )
 
 const (
-	cmsConfigPath  = "moonbase.yaml"
-	jsonSchemaName = "_schema.json"
+	cmsConfigPath   = "moonbase.yaml"
+	jsonSchemaName  = "_schema.json"
+	packageJSONFile = "package.json"
 )
 
 type collectionPayload struct {
@@ -450,6 +451,7 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 // @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
 // @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
 // @Param		ref				path	string	true	"git ref (branch, tag, sha)"
+// @Param		sandpack		query	string	false	"sandpack format (true, false, 0 or 1)"
 // @Param		bundle			query	string	false	"bundle components (true, false, 0 or 1)"
 // @Success		200	{object}	map[string]string
 // @Failure		500	{object}	errorData
@@ -462,6 +464,8 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
 	ref := chi.URLParam(r, "ref")
+
+	sandpack, _ := strconv.ParseBool(r.FormValue("sandpack"))
 	bundle, _ := strconv.ParseBool(r.FormValue("bundle"))
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
@@ -482,6 +486,23 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 		componentsTree[*rc.Path] = string(contentBytes)
 	}
 
+	if sandpack {
+		files := make(map[string]interface{})
+		for path, content := range componentsTree {
+			files[path] = map[string]interface{}{
+				"code": content,
+			}
+		}
+		pkgJsonData, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, packageJSONFile)
+		pkgJson := cms.ParsePackageJSON(pkgJsonData)
+		jsonResponse(w, http.StatusOK, map[string]interface{}{
+			"files": files,
+			"entry": cmsConfig.Components.Entry,
+			"deps":  resolveDeps(pkgJson, cmsConfig.Components.Dependencies),
+		})
+		return
+	}
+
 	if bundle {
 		bundle, err := cms.BundleComponents(componentsTree, cmsConfig.Components, false, false)
 		if err != nil {
@@ -493,4 +514,15 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(w, http.StatusOK, componentsTree)
+}
+
+func resolveDeps(pkgJson *cms.PackageJSON, depNames []string) map[string]string {
+	res := make(map[string]string)
+	for _, depName := range depNames {
+		depVersion := pkgJson.Dependencies[depName]
+		if len(depVersion) > 0 {
+			res[depName] = depVersion
+		}
+	}
+	return res
 }

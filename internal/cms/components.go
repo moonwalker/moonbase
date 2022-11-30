@@ -9,17 +9,27 @@ import (
 	"github.com/evanw/esbuild/pkg/api"
 )
 
-func compsPlugin(tree map[string]string) api.Plugin {
+// ->  /\.modules?\.css$/i;
+
+func compsPlugin(tree map[string]string, config compsConfig) api.Plugin {
 	return api.Plugin{
 		Name: "comps",
 		Setup: func(build api.PluginBuild) {
 			build.OnResolve(api.OnResolveOptions{Filter: `.*`},
 				func(args api.OnResolveArgs) (api.OnResolveResult, error) {
-					path := args.Path
 
-					if args.Kind == api.ResolveEntryPoint {
-						// path = "/" + args.Path
+					// TODO: improve
+					s := strings.Split(args.Path, "/")[0]
+					for _, d := range config.Dependencies {
+						if d == s {
+							return api.OnResolveResult{
+								Path:     args.Path,
+								External: true,
+							}, nil
+						}
 					}
+
+					path := args.Path
 
 					if len(filepath.Ext(path)) == 0 {
 						path += "/index.js"
@@ -40,12 +50,7 @@ func compsPlugin(tree map[string]string) api.Plugin {
 					contents := tree[args.Path]
 
 					if filepath.Ext(args.Path) == ".css" {
-						contents = "/* css */"
-						fmt.Println(contents)
-					}
-
-					if len(contents) == 0 {
-						contents = "/* external */"
+						contents = "/* css module */"
 					}
 
 					return api.OnLoadResult{
@@ -59,16 +64,16 @@ func compsPlugin(tree map[string]string) api.Plugin {
 
 func BundleComponents(tree map[string]string, config compsConfig, preserveJSX bool, minify bool) (string, error) {
 
-	// TODO: this needs to be improved
+	// TODO: improve
 	entry := config.EntryDir() + "/index.js"
 
 	opts := api.BuildOptions{
 		EntryPoints: []string{entry},
-		External:    config.Dependencies,
+		// External:    config.Dependencies,
 		Loader: map[string]api.Loader{
 			".js": api.LoaderJSX,
 		},
-		Plugins: []api.Plugin{compsPlugin(tree)},
+		Plugins: []api.Plugin{compsPlugin(tree, config)},
 		Format:  api.FormatESModule,
 		Bundle:  true,
 	}

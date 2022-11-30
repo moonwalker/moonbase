@@ -1,8 +1,11 @@
 package cms
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -21,6 +24,23 @@ func TestBundleComponents(t *testing.T) {
 	println(res)
 }
 
+func TestBundleComponentsFromJSON(t *testing.T) {
+	td, _ := os.ReadFile("testdata/compstree.json")
+	var tree map[string]string
+	err := json.Unmarshal(td, &tree)
+	if err != nil {
+		t.Error(err)
+	}
+
+	data, _ := os.ReadFile(yamlPath)
+	config := ParseConfig(yamlPath, data)
+	res, err := BundleComponents(tree, config.Components, false, false)
+	if err != nil {
+		t.Error(err)
+	}
+	println(res)
+}
+
 func getDir(s string) string {
 	if len(filepath.Ext(s)) > 0 {
 		return filepath.Dir(s)
@@ -28,7 +48,7 @@ func getDir(s string) string {
 	return s
 }
 
-func TestGetEntryDir(t *testing.T) {
+func TestPathMethods(t *testing.T) {
 	var1 := "src/components"
 	var2 := "src/components/index.js"
 
@@ -39,4 +59,7 @@ func TestGetEntryDir(t *testing.T) {
 	if getDir(var2) != var1 {
 		t.Fail()
 	}
+
+	fmt.Println(strings.Split("next/link", "/")[0])
+	fmt.Println(strings.Split("next", "/")[0])
 }
