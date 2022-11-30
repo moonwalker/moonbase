@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 )
 
+const PackageJSONFile = "package.json"
+
 type PackageJSON struct {
 	Dependencies map[string]string `json:"dependencies"`
 }

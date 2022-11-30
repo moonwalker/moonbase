@@ -7,6 +7,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const ConfigPath = "moonbase.yaml"
+
 type Config struct {
 	ContentDir string      `json:"contents" yaml:"contents"`
 	Components compsConfig `json:"components" yaml:"components"`
@@ -17,12 +19,10 @@ type compsConfig struct {
 	Dependencies []string `json:"dependencies" yaml:"dependencies"`
 }
 
-func ParseConfig(path string, data []byte) *Config {
+func ParseConfig(data []byte) *Config {
 	cfg := &Config{}
-	switch filepath.Ext(path) {
-	case ".yaml":
-		yaml.Unmarshal(data, cfg)
-	case ".json":
+	err := yaml.Unmarshal(data, cfg)
+	if err != nil {
 		json.Unmarshal(data, cfg)
 	}
 	return cfg

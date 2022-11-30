@@ -18,12 +18,6 @@ import (
 	"github.com/moonwalker/moonbase/internal/gh"
 )
 
-const (
-	cmsConfigPath   = "moonbase.yaml"
-	jsonSchemaName  = "_schema.json"
-	packageJSONFile = "package.json"
-)
-
 type collectionPayload struct {
 	Name string `json:"name"`
 }
@@ -43,14 +37,14 @@ type commitEntry struct {
 // config
 
 func getConfig(ctx context.Context, accessToken string, owner string, repo string, ref string) *cms.Config {
-	data, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, cmsConfigPath)
-	return cms.ParseConfig(cmsConfigPath, data)
+	data, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, cms.ConfigPath)
+	return cms.ParseConfig(data)
 }
 
 // schema
 
 func getSchema(ctx context.Context, accessToken string, owner string, repo string, ref string, collection string, workdir string) *cms.Schema {
-	p := filepath.Join(workdir, collection, jsonSchemaName)
+	p := filepath.Join(workdir, collection, cms.JsonSchemaName)
 	data, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, p)
 	return cms.NewSchema(data)
 }
@@ -359,8 +353,8 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 			errCmsSchemaGeneration().Log(r, err).Json(w)
 			return
 		}
-		schemaPath := filepath.Join(cmsConfig.ContentDir, collection, jsonSchemaName)
-		schemaCommitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, jsonSchemaName)
+		schemaPath := filepath.Join(cmsConfig.ContentDir, collection, cms.JsonSchemaName)
+		schemaCommitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, cms.JsonSchemaName)
 		resp, err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, schemaPath, &schema, schemaCommitMessage)
 		if err != nil {
 			errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
@@ -493,7 +487,7 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 				"code": content,
 			}
 		}
-		pkgJsonData, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, packageJSONFile)
+		pkgJsonData, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, cms.PackageJSONFile)
 		pkgJson := cms.ParsePackageJSON(pkgJsonData)
 		jsonResponse(w, http.StatusOK, map[string]interface{}{
 			"files": files,

@@ -7,6 +7,8 @@ import (
 	jsonschemaValidate "github.com/santhosh-tekuri/jsonschema/v5"
 )
 
+const JsonSchemaName = "_schema.json"
+
 type Schema struct {
 	jsonSchema *jsonschemaValidate.Schema
 }
