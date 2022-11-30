@@ -3,6 +3,7 @@ module github.com/moonwalker/moonbase
 go 1.19
 
 require (
+	github.com/allegro/bigcache/v3 v3.1.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/evanw/esbuild v0.15.16
 	github.com/go-chi/chi v1.5.4

@@ -10,17 +10,13 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/gosimple/slug"
 
+	"github.com/moonwalker/moonbase/internal/cache"
 	"github.com/moonwalker/moonbase/internal/cms"
 	"github.com/moonwalker/moonbase/internal/gh"
-)
-
-const (
-	cacheComponents = 10 * time.Minute
 )
 
 type collectionPayload struct {
@@ -457,6 +453,12 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 // @Router		/cms/{owner}/{repo}/{ref}/components	[get]
 // @Security	bearerToken
 func getComponents(w http.ResponseWriter, r *http.Request) {
+	cres, cached := cache.Get(r.URL.String())
+	if cached {
+		rawResponse(w, http.StatusOK, cres)
+		return
+	}
+
 	ctx := r.Context()
 	accessToken := accessTokenFromContext(ctx)
 
@@ -496,12 +498,13 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 		pkgJsonData, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, cms.PackageJSONFile)
 		pkgJson := cms.ParsePackageJSON(pkgJsonData)
 
-		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%.f", cacheComponents.Seconds()))
-		jsonResponse(w, http.StatusOK, map[string]interface{}{
+		jsonBytes := jsonResponse(w, http.StatusOK, map[string]interface{}{
 			"files": files,
 			"entry": cmsConfig.Components.Entry,
 			"deps":  cms.SandpackResolveDeps(pkgJson, cmsConfig.Components.Dependencies),
 		})
+
+		cache.Set(r.URL.String(), jsonBytes)
 		return
 	}
 
