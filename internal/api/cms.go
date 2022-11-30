@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/gosimple/slug"
@@ -492,7 +493,7 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 		jsonResponse(w, http.StatusOK, map[string]interface{}{
 			"files": files,
 			"entry": cmsConfig.Components.Entry,
-			"deps":  resolveDeps(pkgJson, cmsConfig.Components.Dependencies),
+			"deps":  cms.SandpackResolveDeps(pkgJson, cmsConfig.Components.Dependencies),
 		})
 		return
 	}
@@ -507,16 +508,6 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Cache-Control", fmt.Sprintf("s-maxage=%.f", 10*time.Minute.Seconds()))
 	jsonResponse(w, http.StatusOK, componentsTree)
-}
-
-func resolveDeps(pkgJson *cms.PackageJSON, depNames []string) map[string]string {
-	res := make(map[string]string)
-	for _, depName := range depNames {
-		depVersion := pkgJson.Dependencies[depName]
-		if len(depVersion) > 0 {
-			res[depName] = depVersion
-		}
-	}
-	return res
 }
