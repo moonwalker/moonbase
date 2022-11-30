@@ -19,6 +19,10 @@ import (
 	"github.com/moonwalker/moonbase/internal/gh"
 )
 
+const (
+	cacheComponents = 10 * time.Minute
+)
+
 type collectionPayload struct {
 	Name string `json:"name"`
 }
@@ -488,8 +492,11 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 				"code": content,
 			}
 		}
+
 		pkgJsonData, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, cms.PackageJSONFile)
 		pkgJson := cms.ParsePackageJSON(pkgJsonData)
+
+		w.Header().Set("Cache-Control", fmt.Sprintf("s-maxage=%.f", cacheComponents.Seconds()))
 		jsonResponse(w, http.StatusOK, map[string]interface{}{
 			"files": files,
 			"entry": cmsConfig.Components.Entry,
@@ -508,6 +515,5 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Cache-Control", fmt.Sprintf("s-maxage=%.f", 10*time.Minute.Seconds()))
 	jsonResponse(w, http.StatusOK, componentsTree)
 }
