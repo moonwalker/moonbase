@@ -41,6 +41,9 @@ func TestValidateEmptySchema(t *testing.T) {
 	}
 
 	s := NewSchema([]byte{})
+	if s.Available() {
+		t.Fail()
+	}
 	err = s.Validate(v)
 	if err != nil {
 		t.Error(err)

@@ -41,11 +41,24 @@ func NewSchema(schema []byte) *Schema {
 	return &Schema{jsonSchema}
 }
 
+func (s *Schema) Available() bool {
+	return s.jsonSchema != nil
+}
+
 func (s *Schema) Validate(v any) error {
-	if s.jsonSchema != nil {
+	if s.Available() {
 		return s.jsonSchema.Validate(v)
 	}
 	return nil
+}
+
+func (s *Schema) ValidateString(data string) error {
+	var v interface{}
+	err := json.Unmarshal([]byte(data), &v)
+	if err != nil {
+		return err
+	}
+	return s.Validate(v)
 }
 
 func GenerateSchema(contents string) (string, error) {
