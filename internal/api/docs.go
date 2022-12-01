@@ -10,6 +10,8 @@ import (
 	"github.com/moonwalker/moonbase/internal/runtime"
 )
 
+const repoURL = "https://github.com/moonwalker/moonbase"
+
 func docsRedirect(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/docs" || r.URL.Path == "/docs/" {
 		http.Redirect(w, r, "/docs/index.html", http.StatusTemporaryRedirect)
@@ -26,7 +28,7 @@ const (
 )
 
 func docsHandler() http.HandlerFunc {
-	d.SwaggerInfo.Description += fmt.Sprintf("\nRevision: ```%s```", runtime.ShortRev())
+	d.SwaggerInfo.Description += fmt.Sprintf("\n%s", revisionMarkdown())
 	return httpSwagger.Handler(
 		httpSwagger.BeforeScript(jsPopupFunc),
 		httpSwagger.UIConfig(map[string]string{
@@ -53,4 +55,11 @@ func docsHandler() http.HandlerFunc {
 			}`, loginBtnHtml),
 		}),
 	)
+}
+
+func revisionMarkdown() string {
+	if runtime.IsDev() {
+		return fmt.Sprintf("Revision: ```%s```", runtime.ShortRev())
+	}
+	return fmt.Sprintf("Revision: [```%s```](%s/commit/%[1]s)", runtime.ShortRev(), repoURL)
 }
