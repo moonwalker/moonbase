@@ -5,7 +5,6 @@ go 1.19
 require (
 	github.com/allegro/bigcache/v3 v3.1.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/evanw/esbuild v0.15.16
 	github.com/go-chi/chi v1.5.4
 	github.com/go-chi/cors v1.2.1
 	github.com/google/go-github/v48 v48.1.0

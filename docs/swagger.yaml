@@ -499,10 +499,6 @@ paths:
         in: query
         name: sandpack
         type: string
-      - description: bundle components (true, false, 0 or 1)
-        in: query
-        name: bundle
-        type: string
       produces:
       - application/json
       responses:

@@ -627,12 +627,6 @@ const docTemplate = `{
                         "description": "sandpack format (true, false, 0 or 1)",
                         "name": "sandpack",
                         "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "bundle components (true, false, 0 or 1)",
-                        "name": "bundle",
-                        "in": "query"
                     }
                 ],
                 "responses": {

@@ -447,7 +447,6 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 // @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
 // @Param		ref				path	string	true	"git ref (branch, tag, sha)"
 // @Param		sandpack		query	string	false	"sandpack format (true, false, 0 or 1)"
-// @Param		bundle			query	string	false	"bundle components (true, false, 0 or 1)"
 // @Success		200	{object}	map[string]string
 // @Failure		500	{object}	errorData
 // @Router		/cms/{owner}/{repo}/{ref}/components	[get]
@@ -465,9 +464,7 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
 	ref := chi.URLParam(r, "ref")
-
 	sandpack, _ := strconv.ParseBool(r.FormValue("sandpack"))
-	bundle, _ := strconv.ParseBool(r.FormValue("bundle"))
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
@@ -505,16 +502,6 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 		})
 
 		cache.Set(r.URL.String(), jsonBytes)
-		return
-	}
-
-	if bundle {
-		bundle, err := cms.BundleComponents(componentsTree, cmsConfig.Components, false, false)
-		if err != nil {
-			errCmsGetComponents().Status(http.StatusInternalServerError).Log(r, err).Json(w)
-			return
-		}
-		jsonResponse(w, http.StatusOK, bundle)
 		return
 	}
 
