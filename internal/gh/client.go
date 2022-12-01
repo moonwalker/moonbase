@@ -106,7 +106,8 @@ func CommitBlob(ctx context.Context, accessToken string, owner string, repo stri
 		return resp, err
 	}
 
-	if resp, err := pushCommit(ctx, githubClient, reference, tree, owner, repo, commitMessage); err != nil {
+	resp, err = pushCommit(ctx, githubClient, reference, tree, owner, repo, commitMessage)
+	if err != nil {
 		return resp, err
 	}
 
