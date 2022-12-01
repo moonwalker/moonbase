@@ -446,7 +446,7 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 // @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
 // @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
 // @Param		ref				path	string	true	"git ref (branch, tag, sha)"
-// @Param		sandpack		query	string	false	"sandpack format (true, false, 0 or 1)"
+// @Param		sandpack		query	string	false	"response in sandpack format (true, false, 0 or 1)"
 // @Success		200	{object}	map[string]string
 // @Failure		500	{object}	errorData
 // @Router		/cms/{owner}/{repo}/{ref}/components	[get]

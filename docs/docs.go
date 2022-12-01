@@ -624,7 +624,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "sandpack format (true, false, 0 or 1)",
+                        "description": "response in sandpack format (true, false, 0 or 1)",
                         "name": "sandpack",
                         "in": "query"
                     }
