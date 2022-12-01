@@ -320,8 +320,9 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
+	ext := filepath.Ext(entryData.Name)
 
-	if !entryData.SaveSchema {
+	if !entryData.SaveSchema && ext == ".json" {
 		schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.ContentDir)
 		if schema.Available() {
 			err = schema.ValidateString(entryData.Contents)
@@ -332,7 +333,6 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	ext := filepath.Ext(entryData.Name)
 	fn := strings.TrimSuffix(filepath.Base(entryData.Name), ext)
 	entryName := slug.Make(fn) + ext
 
@@ -345,7 +345,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if entryData.SaveSchema {
+	if entryData.SaveSchema && ext == ".json" {
 		schema, err := cms.GenerateSchema(entryData.Contents)
 		if err != nil {
 			errCmsSchemaGeneration().Log(r, err).Json(w)
