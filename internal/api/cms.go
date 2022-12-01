@@ -333,8 +333,8 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	fn := strings.TrimSuffix(filepath.Base(entryData.Name), ext)
-	entryName := slug.Make(fn) + ext
+	fname := strings.TrimSuffix(filepath.Base(entryData.Name), ext)
+	entryName := slug.Make(fname) + ext
 
 	path := filepath.Join(cmsConfig.ContentDir, collection, entryName)
 	commitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, entryName)
