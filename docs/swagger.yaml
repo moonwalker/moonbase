@@ -495,13 +495,9 @@ paths:
         name: ref
         required: true
         type: string
-      - description: sandpack format (true, false, 0 or 1)
+      - description: response in sandpack format (true, false, 0 or 1)
         in: query
         name: sandpack
-        type: string
-      - description: bundle components (true, false, 0 or 1)
-        in: query
-        name: bundle
         type: string
       produces:
       - application/json

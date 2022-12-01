@@ -216,7 +216,7 @@ func withUser(next http.Handler) http.Handler {
 		ctx := context.WithValue(r.Context(), ctxKeyAccessToken, string(authClaims.Data))
 
 		// authenticated, pass it through
-		next.ServeHTTP(w, r.WithContext(ctx))
+		next.ServeHTTP(w, r.Clone(ctx))
 	})
 }
 

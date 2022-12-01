@@ -17,7 +17,7 @@ var tree = map[string]string{
 func TestBundleComponents(t *testing.T) {
 	data, _ := os.ReadFile(yamlPath)
 	config := ParseConfig(data)
-	res, err := BundleComponents(tree, config.Components, false, false)
+	res, err := BundleComponents(tree, config.Components, true, false, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -34,7 +34,7 @@ func TestBundleComponentsFromJSON(t *testing.T) {
 
 	data, _ := os.ReadFile(yamlPath)
 	config := ParseConfig(data)
-	res, err := BundleComponents(tree, config.Components, false, false)
+	res, err := BundleComponents(tree, config.Components, false, false, false)
 	if err != nil {
 		t.Error(err)
 	}
