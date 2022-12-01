@@ -41,6 +41,7 @@ type treeItem struct {
 
 type blobEntry struct {
 	Contents []byte `json:"contents"`
+	Type     string `json:"type"`
 }
 
 type commitPayload struct {
@@ -197,7 +198,7 @@ func getBlob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := &blobEntry{blob}
+	data := &blobEntry{Contents: blob}
 	jsonResponse(w, http.StatusOK, data)
 }
 

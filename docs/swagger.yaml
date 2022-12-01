@@ -5,6 +5,8 @@ definitions:
         items:
           type: integer
         type: array
+      type:
+        type: string
     type: object
   api.branchItem:
     properties:

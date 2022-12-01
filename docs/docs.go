@@ -1014,6 +1014,9 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },

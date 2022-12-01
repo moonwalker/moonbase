@@ -19,9 +19,9 @@ func Listen(port int) error {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
 	r.Use(middleware.Compress(flate.DefaultCompression))
 	r.Use(cors.Handler(corsOptions))
+	r.Use(middleware.Recoverer)
 
 	r.Mount("/", api.Routes())
 

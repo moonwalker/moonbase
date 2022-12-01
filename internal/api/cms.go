@@ -389,13 +389,14 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 	path := filepath.Join(cmsConfig.ContentDir, collection, entry)
 
-	blob, resp, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, path)
+	fc, resp, err := gh.GetFileContent(ctx, accessToken, owner, repo, ref, path)
+	blob, err := fc.GetContent()
 	if err != nil {
 		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
-	data := &blobEntry{blob}
+	data := &blobEntry{Contents: []byte(blob), Type: filepath.Ext(*fc.Name)}
 	jsonResponse(w, http.StatusOK, data)
 }
 

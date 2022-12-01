@@ -73,7 +73,7 @@ func GetTree(ctx context.Context, accessToken string, owner string, repo string,
 	return rc, resp, nil
 }
 
-func GetBlob(ctx context.Context, accessToken string, owner string, repo string, ref, path string) ([]byte, *github.Response, error) {
+func GetFileContent(ctx context.Context, accessToken string, owner string, repo string, ref, path string) (*github.RepositoryContent, *github.Response, error) {
 	if len(path) == 0 {
 		return nil, nil, errors.New("path not provided")
 	}
@@ -81,6 +81,15 @@ func GetBlob(ctx context.Context, accessToken string, owner string, repo string,
 	fc, _, resp, err := ghClient(ctx, accessToken).Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
 		Ref: ref,
 	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return fc, resp, nil
+}
+
+func GetBlob(ctx context.Context, accessToken string, owner string, repo string, ref, path string) ([]byte, *github.Response, error) {
+	fc, resp, err := GetFileContent(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
 		return nil, resp, err
 	}
