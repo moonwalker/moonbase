@@ -3,6 +3,7 @@ package gh
 import (
 	"context"
 	"errors"
+	"path/filepath"
 
 	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
@@ -203,29 +204,47 @@ func GetCommits(ctx context.Context, accessToken string, owner string, repo stri
 	return rc, resp, nil
 }
 
-func GetContentsRecursive(ctx context.Context, accessToken string, owner string, repo string, ref string, path string) ([]*github.RepositoryContent, *github.Response, error) {
+func GetDirectorySha(ctx context.Context, accessToken string, owner string, repo string, ref string, path string) string {
 	githubClient := ghClient(ctx, accessToken)
-	return getContentsRecursive(ctx, githubClient, owner, repo, ref, path)
+	sha, _, _ := getDirectorySha(ctx, githubClient, owner, repo, ref, path)
+	return sha
 }
 
-func getContentsRecursive(ctx context.Context, githubClient *github.Client, owner string, repo string, ref string, path string) ([]*github.RepositoryContent, *github.Response, error) {
-	_, dc, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
+func getDirectorySha(ctx context.Context, githubClient *github.Client, owner string, repo string, ref string, path string) (string, *github.Response, error) {
+	parentPath := filepath.Dir(path)
+	_, dc, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, parentPath, &github.RepositoryContentGetOptions{
 		Ref: ref,
 	})
+	if err != nil {
+		return "", resp, err
+	}
+
+	for _, te := range dc {
+		if *te.Type == "dir" && *te.Path == path {
+			return *te.SHA, resp, err
+		}
+	}
+
+	return "", resp, err
+}
+
+func GetContentsRecursive(ctx context.Context, accessToken string, owner string, repo string, ref string, path string) ([]*github.RepositoryContent, *github.Response, error) {
+	githubClient := ghClient(ctx, accessToken)
+
+	sha, resp, err := getDirectorySha(ctx, githubClient, owner, repo, ref, path)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	tree, resp, err := githubClient.Git.GetTree(ctx, owner, repo, sha, true)
 	if err != nil {
 		return nil, resp, err
 	}
 
 	rcs := make([]*github.RepositoryContent, 0)
-	for _, te := range dc {
-		if *te.Type == "dir" {
-			srcs, resp, err := getContentsRecursive(ctx, githubClient, owner, repo, ref, *te.Path)
-			if err != nil {
-				return nil, resp, err
-			}
-			rcs = append(rcs, srcs...)
-		} else {
-			rc, _, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, *te.Path, &github.RepositoryContentGetOptions{})
+	for _, te := range tree.Entries {
+		if *te.Type == "blob" {
+			rc, _, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, filepath.Join(path, *te.Path), &github.RepositoryContentGetOptions{})
 			if err != nil {
 				return nil, resp, err
 			}
