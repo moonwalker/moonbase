@@ -467,8 +467,8 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 
 	// caching expensive part
 	componentsTree := make(map[string]string)
-	cached := componentsCache.GetJSON(r.URL.Path, &componentsTree)
-	if !cached {
+	err := componentsCache.GetJSON(r.URL.Path, &componentsTree)
+	if err == nil {
 		rcs, resp, err := gh.GetContentsRecursive(ctx, accessToken, owner, repo, ref, cmsConfig.Components.EntryDir())
 		if err != nil {
 			errCmsGetComponents().Status(resp.StatusCode).Log(r, err).Json(w)
