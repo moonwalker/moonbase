@@ -19,7 +19,7 @@ import (
 )
 
 // test the flow:
-// http://localhost:8080/login/github?returnURL=/login/github/authenticate
+// http://localhost:8080/login/github?return_url=/login/github/authenticate
 
 type ctxKey int
 
@@ -132,7 +132,7 @@ func encryptAccessToken(accessToken string) (string, error) {
 }
 
 func encodeState(r *http.Request) (string, error) {
-	returnURL := r.FormValue("returnURL")
+	returnURL := r.FormValue("return_url")
 
 	u, err := url.Parse(returnURL)
 	if err != nil {

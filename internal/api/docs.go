@@ -44,7 +44,7 @@ func docsHandler() http.HandlerFunc {
 			"onComplete": fmt.Sprintf(`() => {
 				document.querySelector(".auth-wrapper").insertAdjacentHTML("afterbegin", '%s')
 				document.querySelector("#loginbtn").addEventListener('click', () => {
-					const authwin = popupWindow("/login/github?returnURL=/login/github/authenticate", "swagger-gh-auth", window, 640, 480)
+					const authwin = popupWindow("/login/github?return_url=/login/github/authenticate", "swagger-gh-auth", window, 640, 480)
 					authwin.onload = () => {
 						const res = JSON.parse(authwin.document.querySelector("pre").innerText)
 						window.localStorage.setItem('authorized', JSON.stringify({"bearerToken":{"name":"bearerToken","schema":{"type":"apiKey","name":"Authorization","in":"header"},"value":res.token}}))
