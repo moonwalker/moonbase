@@ -37,9 +37,11 @@ type commitEntry struct {
 }
 
 type ComponentsTree map[string]string
+type ComponentsTreeSha string
 
 var (
 	componentsCache = cache.NewGeneric[ComponentsTree](30 * time.Minute)
+	shaCache        = cache.NewGeneric[ComponentsTreeSha](30 * time.Minute)
 )
 
 // config
@@ -468,8 +470,17 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
 	// caching expensive part
-	componentsTree, err := componentsCache.Get(r.URL.Path)
-	if err == nil {
+	cachedSha, err := shaCache.Get(fmt.Sprintf("sha:%s", r.URL.Path))
+	currentSha := gh.GetDirectorySha(ctx, accessToken, owner, repo, ref, cmsConfig.Components.EntryDir())
+	var componentsTree ComponentsTree
+	if err == nil && string(cachedSha) == currentSha {
+		componentsTree, err = componentsCache.Get(r.URL.Path)
+	}
+
+	if err != nil || componentsTree == nil {
+		if componentsTree == nil {
+			componentsTree = make(ComponentsTree)
+		}
 		rcs, resp, err := gh.GetContentsRecursive(ctx, accessToken, owner, repo, ref, cmsConfig.Components.EntryDir())
 		if err != nil {
 			errCmsGetComponents().Status(resp.StatusCode).Log(r, err).Json(w)
@@ -484,6 +495,7 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 			componentsTree[*rc.Path] = string(contentBytes)
 		}
 		componentsCache.Set(r.URL.Path, componentsTree)
+		shaCache.Set(fmt.Sprintf("sha:%s", r.URL.Path), ComponentsTreeSha(currentSha))
 	}
 
 	if sandpack {
