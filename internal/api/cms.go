@@ -450,12 +450,6 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 // @Router		/cms/{owner}/{repo}/{ref}/components	[get]
 // @Security	bearerToken
 func getComponents(w http.ResponseWriter, r *http.Request) {
-	cres, cached := cache.Get(r.URL.String())
-	if cached {
-		rawResponse(w, http.StatusOK, cres)
-		return
-	}
-
 	ctx := r.Context()
 	accessToken := accessTokenFromContext(ctx)
 
@@ -466,20 +460,24 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
-	rcs, resp, err := gh.GetContentsRecursive(ctx, accessToken, owner, repo, ref, cmsConfig.Components.EntryDir())
-	if err != nil {
-		errCmsGetComponents().Status(resp.StatusCode).Log(r, err).Json(w)
-		return
-	}
-
+	// caching expensive part
 	componentsTree := make(map[string]string)
-	for _, rc := range rcs {
-		contentBytes, err := base64.StdEncoding.DecodeString(*rc.Content)
+	cached := cache.GetJSON(r.URL.Path, &componentsTree)
+	if !cached {
+		rcs, resp, err := gh.GetContentsRecursive(ctx, accessToken, owner, repo, ref, cmsConfig.Components.EntryDir())
 		if err != nil {
-			errCmsGetComponents().Status(http.StatusInternalServerError).Log(r, err).Json(w)
+			errCmsGetComponents().Status(resp.StatusCode).Log(r, err).Json(w)
 			return
 		}
-		componentsTree[*rc.Path] = string(contentBytes)
+		for _, rc := range rcs {
+			contentBytes, err := base64.StdEncoding.DecodeString(*rc.Content)
+			if err != nil {
+				errCmsGetComponents().Status(http.StatusInternalServerError).Log(r, err).Json(w)
+				return
+			}
+			componentsTree[*rc.Path] = string(contentBytes)
+		}
+		cache.SetJSON(r.URL.Path, componentsTree)
 	}
 
 	if sandpack {
@@ -493,13 +491,11 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 		pkgJsonData, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, cms.PackageJSONFile)
 		pkgJson := cms.ParsePackageJSON(pkgJsonData)
 
-		jsonBytes := jsonResponse(w, http.StatusOK, map[string]interface{}{
+		jsonResponse(w, http.StatusOK, map[string]interface{}{
 			"files": files,
 			"entry": cmsConfig.Components.Entry,
-			"deps":  cms.SandpackResolveDeps(pkgJson, cmsConfig.Components.Dependencies),
+			"deps":  cms.ResolveDepsVersions(pkgJson, cmsConfig.Components.Dependencies),
 		})
-
-		cache.Set(r.URL.String(), jsonBytes)
 		return
 	}
 
