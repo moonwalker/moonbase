@@ -8,31 +8,30 @@ import (
 	"github.com/allegro/bigcache/v3"
 )
 
-const (
-	eviction = 10 * time.Minute
-)
+type Cache struct {
+	core *bigcache.BigCache
+}
 
-var cache *bigcache.BigCache
-
-func init() {
-	cache, _ = bigcache.New(context.Background(), bigcache.DefaultConfig(eviction))
+func New(eviction time.Duration) *Cache {
+	core, _ := bigcache.New(context.Background(), bigcache.DefaultConfig(eviction))
+	return &Cache{core}
 }
 
 // raw
 
-func Get(key string) ([]byte, bool) {
-	entry, err := cache.Get(key)
+func (c *Cache) Get(key string) ([]byte, bool) {
+	entry, err := c.core.Get(key)
 	return entry, err == nil
 }
 
-func Set(key string, entry []byte) error {
-	return cache.Set(key, entry)
+func (c *Cache) Set(key string, entry []byte) error {
+	return c.core.Set(key, entry)
 }
 
 // json
 
-func GetJSON(key string, v any) bool {
-	entry, err := cache.Get(key)
+func (c *Cache) GetJSON(key string, v any) bool {
+	entry, err := c.core.Get(key)
 	if err != nil {
 		return false
 	}
@@ -40,10 +39,10 @@ func GetJSON(key string, v any) bool {
 	return err == nil
 }
 
-func SetJSON(key string, v any) error {
+func (c *Cache) SetJSON(key string, v any) error {
 	entry, err := json.Marshal(&v)
 	if err != nil {
 		return err
 	}
-	return cache.Set(key, entry)
+	return c.core.Set(key, entry)
 }

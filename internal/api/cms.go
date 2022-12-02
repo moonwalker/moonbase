@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/gosimple/slug"
@@ -34,6 +35,10 @@ type commitEntry struct {
 	Message string `json:"message"`
 	Date    string `json:"date"`
 }
+
+var (
+	componentsCache = cache.New(30 * time.Minute)
+)
 
 // config
 
@@ -462,7 +467,7 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 
 	// caching expensive part
 	componentsTree := make(map[string]string)
-	cached := cache.GetJSON(r.URL.Path, &componentsTree)
+	cached := componentsCache.GetJSON(r.URL.Path, &componentsTree)
 	if !cached {
 		rcs, resp, err := gh.GetContentsRecursive(ctx, accessToken, owner, repo, ref, cmsConfig.Components.EntryDir())
 		if err != nil {
@@ -477,7 +482,7 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 			}
 			componentsTree[*rc.Path] = string(contentBytes)
 		}
-		cache.SetJSON(r.URL.Path, componentsTree)
+		componentsCache.SetJSON(r.URL.Path, componentsTree)
 	}
 
 	if sandpack {
