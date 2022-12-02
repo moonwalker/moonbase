@@ -36,8 +36,10 @@ type commitEntry struct {
 	Date    string `json:"date"`
 }
 
+type ComponentsTree map[string]string
+
 var (
-	componentsCache = cache.New(30 * time.Minute)
+	componentsCache = cache.NewGeneric[ComponentsTree](30 * time.Minute)
 )
 
 // config
@@ -466,8 +468,7 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
 	// caching expensive part
-	componentsTree := make(map[string]string)
-	err := componentsCache.GetJSON(r.URL.Path, &componentsTree)
+	componentsTree, err := componentsCache.Get(r.URL.Path)
 	if err == nil {
 		rcs, resp, err := gh.GetContentsRecursive(ctx, accessToken, owner, repo, ref, cmsConfig.Components.EntryDir())
 		if err != nil {
@@ -482,7 +483,7 @@ func getComponents(w http.ResponseWriter, r *http.Request) {
 			}
 			componentsTree[*rc.Path] = string(contentBytes)
 		}
-		componentsCache.SetJSON(r.URL.Path, componentsTree)
+		componentsCache.Set(r.URL.Path, componentsTree)
 	}
 
 	if sandpack {
