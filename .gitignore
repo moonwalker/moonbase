@@ -19,4 +19,5 @@
 .env
 .env.local
 curl.*
+node_modules
 tmp

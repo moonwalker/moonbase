@@ -1,0 +1,13 @@
+{
+  "name": "moonbase",
+  "version": "0.1.0",
+  "description": "Git-based headless CMS API",
+  "license": "MIT",
+  "scripts": {
+    "css": "npx tailwindcss -i internal/api/static/input.css -o internal/api/static/assets/styles.css"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.8",
+    "tailwindcss": "^3.2.4"
+  }
+}
