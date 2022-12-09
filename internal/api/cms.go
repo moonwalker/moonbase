@@ -2,13 +2,11 @@ package api
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -121,7 +119,7 @@ func getCollections(w http.ResponseWriter, r *http.Request) {
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
-	repoContents, resp, err := gh.GetTree(ctx, accessToken, owner, repo, ref, cmsConfig.ContentDir)
+	repoContents, resp, err := gh.GetTree(ctx, accessToken, owner, repo, ref, cmsConfig.WorkDir)
 	if err != nil {
 		errReposGetTree().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
@@ -170,7 +168,7 @@ func postCollection(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
 	collectionName := slug.Make(collection.Name)
-	path := filepath.Join(cmsConfig.ContentDir, collectionName, ".gitkeep")
+	path := filepath.Join(cmsConfig.WorkDir, collectionName, ".gitkeep")
 	commitMessage := fmt.Sprintf("feat(content): create %s", collectionName)
 	emptyContent := ""
 
@@ -206,8 +204,8 @@ func delCollection(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
 	collectionName := slug.Make(collection)
-	path := filepath.Join(cmsConfig.ContentDir, collectionName)
-	if path == cmsConfig.ContentDir {
+	path := filepath.Join(cmsConfig.WorkDir, collectionName)
+	if path == cmsConfig.WorkDir {
 		m := "missing collection name"
 		errCmsDeleteFolder().Details(m).Log(r, errors.New(m)).Json(w)
 		return
@@ -247,7 +245,7 @@ func getEntries(w http.ResponseWriter, r *http.Request) {
 	collection := chi.URLParam(r, "collection")
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.ContentDir, collection)
+	path := filepath.Join(cmsConfig.WorkDir, collection)
 
 	repoContents, resp, err := gh.GetTree(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
@@ -332,7 +330,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	ext := filepath.Ext(entryData.Name)
 
 	if !entryData.SaveSchema && ext == ".json" {
-		schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.ContentDir)
+		schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.WorkDir)
 		if schema.Available() {
 			err = schema.ValidateString(entryData.Contents)
 			if err != nil {
@@ -345,7 +343,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	fname := strings.TrimSuffix(filepath.Base(entryData.Name), ext)
 	entryName := slug.Make(fname) + ext
 
-	path := filepath.Join(cmsConfig.ContentDir, collection, entryName)
+	path := filepath.Join(cmsConfig.WorkDir, collection, entryName)
 	commitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, entryName)
 
 	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &entryData.Contents, commitMessage)
@@ -360,7 +358,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 			errCmsSchemaGeneration().Log(r, err).Json(w)
 			return
 		}
-		schemaPath := filepath.Join(cmsConfig.ContentDir, collection, cms.JsonSchemaName)
+		schemaPath := filepath.Join(cmsConfig.WorkDir, collection, cms.JsonSchemaName)
 		schemaCommitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, cms.JsonSchemaName)
 		resp, err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, schemaPath, &schema, schemaCommitMessage)
 		if err != nil {
@@ -396,7 +394,7 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 	entry := chi.URLParam(r, "entry")
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.ContentDir, collection, entry)
+	path := filepath.Join(cmsConfig.WorkDir, collection, entry)
 
 	fc, resp, err := gh.GetFileContent(ctx, accessToken, owner, repo, ref, path)
 	blob, err := fc.GetContent()
@@ -432,7 +430,7 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 	entry := chi.URLParam(r, "entry")
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.ContentDir, collection, entry)
+	path := filepath.Join(cmsConfig.WorkDir, collection, entry)
 	commitMessage := fmt.Sprintf("delete(%s): %s", collection, entry)
 
 	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, nil, commitMessage)
@@ -442,80 +440,4 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-}
-
-// components
-
-// @Summary		Get components
-// @Tags		cms
-// @Accept		json
-// @Produce		json
-// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
-// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
-// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
-// @Param		sandpack		query	string	false	"response in sandpack format (true, false, 0 or 1)"
-// @Success		200	{object}	map[string]string
-// @Failure		500	{object}	errorData
-// @Router		/cms/{owner}/{repo}/{ref}/components	[get]
-// @Security	bearerToken
-func getComponents(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
-
-	owner := chi.URLParam(r, "owner")
-	repo := chi.URLParam(r, "repo")
-	ref := chi.URLParam(r, "ref")
-	sandpack, _ := strconv.ParseBool(r.FormValue("sandpack"))
-
-	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-
-	// caching expensive part
-	cachedSha, err := shaCache.Get(fmt.Sprintf("sha:%s", r.URL.Path))
-	currentSha := gh.GetDirectorySha(ctx, accessToken, owner, repo, ref, cmsConfig.Components.EntryDir())
-	var componentsTree ComponentsTree
-	if err == nil && string(cachedSha) == currentSha {
-		componentsTree, err = componentsCache.Get(r.URL.Path)
-	}
-
-	if err != nil || componentsTree == nil {
-		if componentsTree == nil {
-			componentsTree = make(ComponentsTree)
-		}
-		rcs, resp, err := gh.GetContentsRecursive(ctx, accessToken, owner, repo, ref, cmsConfig.Components.EntryDir())
-		if err != nil {
-			errCmsGetComponents().Status(resp.StatusCode).Log(r, err).Json(w)
-			return
-		}
-		for _, rc := range rcs {
-			contentBytes, err := base64.StdEncoding.DecodeString(*rc.Content)
-			if err != nil {
-				errCmsGetComponents().Status(http.StatusInternalServerError).Log(r, err).Json(w)
-				return
-			}
-			componentsTree[*rc.Path] = string(contentBytes)
-		}
-		componentsCache.Set(r.URL.Path, componentsTree)
-		shaCache.Set(fmt.Sprintf("sha:%s", r.URL.Path), ComponentsTreeSha(currentSha))
-	}
-
-	if sandpack {
-		files := make(map[string]interface{})
-		for path, content := range componentsTree {
-			files[path] = map[string]interface{}{
-				"code": content,
-			}
-		}
-
-		pkgJsonData, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, cms.PackageJSONFile)
-		pkgJson := cms.ParsePackageJSON(pkgJsonData)
-
-		jsonResponse(w, http.StatusOK, map[string]interface{}{
-			"files": files,
-			"entry": cmsConfig.Components.Entry,
-			"deps":  cms.ResolveDepsVersions(pkgJson, cmsConfig.Components.Dependencies),
-		})
-		return
-	}
-
-	jsonResponse(w, http.StatusOK, componentsTree)
 }

@@ -1,8 +1,1 @@
-contents: content # default to root if empty
-
-branch: canary # limit operations to this branch if specified
-
-components:
-  entry: src/components
-  dependencies:
-    - next
+workdir: content # default to root if empty

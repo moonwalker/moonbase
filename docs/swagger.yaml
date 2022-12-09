@@ -477,48 +477,6 @@ paths:
       summary: Update entry
       tags:
       - cms
-  /cms/{owner}/{repo}/{ref}/components:
-    get:
-      consumes:
-      - application/json
-      parameters:
-      - description: the account owner of the repository (the name is not case sensitive)
-        in: path
-        name: owner
-        required: true
-        type: string
-      - description: the name of the repository (the name is not case sensitive)
-        in: path
-        name: repo
-        required: true
-        type: string
-      - description: git ref (branch, tag, sha)
-        in: path
-        name: ref
-        required: true
-        type: string
-      - description: response in sandpack format (true, false, 0 or 1)
-        in: query
-        name: sandpack
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/api.errorData'
-      security:
-      - bearerToken: []
-      summary: Get components
-      tags:
-      - cms
   /repos:
     get:
       consumes:

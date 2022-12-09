@@ -1,9 +1,3 @@
 {
-  "contents": "content",
-  "components": {
-    "entry": "src/components",
-    "dependencies": [
-      "next"
-    ]
-  }
+  "workdir": "content"
 }
