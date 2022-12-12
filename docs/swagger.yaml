@@ -420,7 +420,8 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.entryPayload'
+            additionalProperties: true
+            type: object
         "500":
           description: Internal Server Error
           schema:

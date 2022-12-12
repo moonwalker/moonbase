@@ -379,7 +379,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 // @Param		ref				path	string	true	"git ref (branch, tag, sha)"
 // @Param		collection		path	string	true	"collection"
 // @Param		entry			path	string	true	"entry"
-// @Success		200	{object}	entryPayload
+// @Success		200	{object}	map[string]interface{}
 // @Failure		500	{object}	errorData
 // @Router		/cms/{owner}/{repo}/{ref}/collections/{collection}/{entry}	[get]
 // @Security	bearerToken
@@ -403,8 +403,13 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := &blobEntry{Contents: []byte(blob), Type: filepath.Ext(*fc.Name)}
-	jsonResponse(w, http.StatusOK, data)
+	blobType := filepath.Ext(*fc.Name)
+	mc, err := cms.ParseBlob(blobType, blob)
+	if err != nil {
+		errCmsParseBlob().Status(http.StatusInternalServerError).Log(r, err).Json(w)
+		return
+	}
+	jsonResponse(w, http.StatusOK, mc)
 }
 
 // @Summary		Delete entry

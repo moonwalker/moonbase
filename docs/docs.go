@@ -438,7 +438,8 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.entryPayload"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "500": {
