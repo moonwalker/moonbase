@@ -1,1 +1,1 @@
-workdir: content # default to root if empty
+workdir: test # default to root if not set

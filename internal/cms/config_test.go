@@ -7,23 +7,22 @@ import (
 )
 
 const (
-	workdir  = "content"
-	jsonPath = "testdata/moonbase.json"
 	yamlPath = "testdata/moonbase.yaml"
+	jsonPath = "testdata/moonbase.json"
 )
 
-func TestConfigParseJSON(t *testing.T) {
-	testParse(t, jsonPath)
-}
-
 func TestConfigParseYAML(t *testing.T) {
-	testParse(t, yamlPath)
+	testParse(t, yamlPath, "test")
 }
 
-func testParse(t *testing.T, path string) {
+func TestConfigParseJSON(t *testing.T) {
+	testParse(t, jsonPath, "")
+}
+
+func testParse(t *testing.T, path string, dir string) {
 	data, _ := os.ReadFile(path)
 	config := ParseConfig(data)
-	if config.WorkDir != workdir {
+	if config.WorkDir != dir {
 		t.Error(errors.New("working dir mismatch"))
 	}
 }
