@@ -38,8 +38,7 @@ type ComponentsTree map[string]string
 type ComponentsTreeSha string
 
 var (
-	componentsCache = cache.NewGeneric[ComponentsTree](30 * time.Minute)
-	shaCache        = cache.NewGeneric[ComponentsTreeSha](30 * time.Minute)
+	shaCache = cache.NewGeneric[ComponentsTreeSha](30 * time.Minute)
 )
 
 // config
