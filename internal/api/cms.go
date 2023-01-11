@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/gosimple/slug"
 
 	"github.com/moonwalker/moonbase/internal/cache"
