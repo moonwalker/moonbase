@@ -13,6 +13,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/gosimple/slug"
 
+	"github.com/moonwalker/moonbase/pkg/content"
+
 	"github.com/moonwalker/moonbase/internal/cache"
 	"github.com/moonwalker/moonbase/internal/cms"
 	"github.com/moonwalker/moonbase/internal/gh"
@@ -41,7 +43,7 @@ type entryItem struct {
 	Name    string                 `json:"name"`
 	Type    string                 `json:"type"`
 	Content map[string]interface{} `json:"content"`
-	Schema  cms.CollectionSchema   `json:"schema,omitempty"`
+	Schema  content.Schema         `json:"schema,omitempty"`
 }
 
 var (
@@ -335,16 +337,16 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 	ext := filepath.Ext(entryData.Name)
 
-	if !entryData.SaveSchema {
-		schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.WorkDir)
-		if schema.Available() {
-			err = schema.ValidateString(entryData.Contents)
-			if err != nil {
-				errCmsSchemaValidation().Log(r, err).Json(w)
-				return
-			}
-		}
-	}
+	// if !entryData.SaveSchema {
+	// 	schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.WorkDir)
+	// 	if schema.Available() {
+	// 		err = schema.ValidateString(entryData.Contents)
+	// 		if err != nil {
+	// 			errCmsSchemaValidation().Log(r, err).Json(w)
+	// 			return
+	// 		}
+	// 	}
+	// }
 
 	fname := strings.TrimSuffix(filepath.Base(entryData.Name), ext)
 	entryName := slug.Make(fname) + ext
@@ -432,7 +434,7 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 	p := filepath.Join(cmsConfig.WorkDir, collection, cms.JsonSchemaName)
 	s, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, p)
 
-	cs := cms.CollectionSchema{}
+	cs := content.Schema{}
 	err = json.Unmarshal(s, &cs)
 	if err != nil {
 		errCmsParseSchema().Status(http.StatusInternalServerError).Log(r, err).Json(w)
