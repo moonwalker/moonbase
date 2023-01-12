@@ -157,6 +157,42 @@ func pushCommit(ctx context.Context, githubClient *github.Client, ref *github.Re
 	// Attach the commit to the branch
 	ref.Object.SHA = newCommit.SHA
 	_, resp, err = githubClient.Git.UpdateRef(ctx, owner, repo, ref, false)
+	if err != nil {
+		return resp, err
+	}
+
+	// Crreate pull request if needed
+	/*rep, resp, err := githubClient.Repositories.Get(ctx, owner, repo)
+	if err != nil {
+		return resp, err
+	}
+
+	branch := (*ref.Ref)[strings.LastIndex(*ref.Ref, "/")+1:]
+	if branch != *rep.DefaultBranch {
+		resp, err = createPR(ctx, githubClient, owner, repo, *ref.Ref, *rep.DefaultBranch)
+		if err != nil {
+			return resp, err
+		}
+	}*/
+
+	return resp, err
+}
+
+// createPR creates a pull request
+func createPR(ctx context.Context, githubClient *github.Client, owner string, repo string, branch string, baseBranch string) (*github.Response, error) {
+	subject := "pr"
+	newPR := &github.NewPullRequest{
+		Title:               &subject,
+		Head:                &branch,
+		Base:                &baseBranch,
+		MaintainerCanModify: github.Bool(true),
+	}
+
+	_, resp, err := githubClient.PullRequests.Create(ctx, owner, repo, newPR)
+	if err != nil {
+		return nil, err
+	}
+
 	return resp, err
 }
 

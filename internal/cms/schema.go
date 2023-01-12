@@ -2,30 +2,30 @@ package cms
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"reflect"
-
-	jsonschemaValidate "github.com/santhosh-tekuri/jsonschema/v5"
 )
 
 const JsonSchemaName = "_schema.json"
 
 type Schema struct {
-	jsonSchema *jsonschemaValidate.Schema
+	jsonSchema *CollectionSchema
 }
 
-type schemaProperties map[string]interface{}
-type schemaObject struct {
-	Schema     string           `json:"$schema,omitempty"`
-	Type       string           `json:"type"`
-	Properties schemaProperties `json:"properties,omitempty"`
-	Required   []string         `json:"required,omitempty"`
-}
-type schemaArray struct {
-	Type  string       `json:"type"`
-	Items schemaObject `json:"items"`
+type CollectionSchema struct {
+	Name   string        `json:"name"`
+	Fields []SchemaField `json:"fields,omitempty"`
 }
 
-const jsonSchemaTag = "http://json-schema.org/draft-07/schema#"
+type SchemaField struct {
+	Name     string            `json:"name"`
+	Label    string            `json:"label"`
+	Type     string            `json:"type"`
+	List     bool              `json:"list"`
+	Required bool              `json:"required"`
+	Object   *CollectionSchema `json:"object,omitempty"`
+}
 
 var schemaTypeMap = map[string]string{
 	"string":  "string",
@@ -34,7 +34,8 @@ var schemaTypeMap = map[string]string{
 }
 
 func NewSchema(schema []byte) *Schema {
-	jsonSchema, err := jsonschemaValidate.CompileString("", string(schema))
+	jsonSchema := &CollectionSchema{}
+	err := json.Unmarshal(schema, jsonSchema)
 	if err != nil {
 		return &Schema{}
 	}
@@ -45,15 +46,15 @@ func (s *Schema) Available() bool {
 	return s.jsonSchema != nil
 }
 
-func (s *Schema) Validate(v any) error {
+func (s *Schema) Validate(v map[string]interface{}) error {
 	if s.Available() {
-		return s.jsonSchema.Validate(v)
+		return validateJson(s.jsonSchema, v, "")
 	}
 	return nil
 }
 
 func (s *Schema) ValidateString(data string) error {
-	var v interface{}
+	var v map[string]interface{}
 	err := json.Unmarshal([]byte(data), &v)
 	if err != nil {
 		return err
@@ -61,23 +62,19 @@ func (s *Schema) ValidateString(data string) error {
 	return s.Validate(v)
 }
 
-func GenerateSchema(contents string) (string, error) {
+func GenerateSchema(name string, contents string) (string, error) {
 	var v map[string]interface{}
 	err := json.Unmarshal([]byte(contents), &v)
 	if err != nil {
 		return "", err
 	}
 
-	fields := make(map[string]interface{})
-	fieldNames := parseJson("", v, fields)
-
-	so := schemaObject{
-		Schema:     jsonSchemaTag,
-		Type:       "object",
-		Properties: fields,
-		Required:   fieldNames,
+	fields := parseJson("", v)
+	cs := CollectionSchema{
+		Name:   name,
+		Fields: fields,
 	}
-	schemaStr, err := json.MarshalIndent(so, "", "  ")
+	schemaStr, err := json.MarshalIndent(cs, "", "  ")
 	if err != nil {
 		return "", err
 	}
@@ -85,8 +82,8 @@ func GenerateSchema(contents string) (string, error) {
 	return string(schemaStr), nil
 }
 
-func parseJson(parentKey string, obj interface{}, fields map[string]interface{}) []string {
-	fieldNames := make([]string, 0)
+func parseJson(parentKey string, obj interface{}) []SchemaField {
+	fields := make([]SchemaField, 0)
 	if len(parentKey) > 0 {
 		parentKey = parentKey + "."
 	}
@@ -99,41 +96,82 @@ func parseJson(parentKey string, obj interface{}, fields map[string]interface{})
 				break
 			}
 			firstElement := arrayConversion[0]
-			fieldNames = append(fieldNames, parentKey+key)
 
 			subFieldMap, ok := firstElement.(map[string]interface{})
 			if !ok {
-				fields[parentKey+key] = schemaArray{
-					Type: "array",
-					Items: schemaObject{
-						Type: reflect.TypeOf(firstElement).Name(),
-					},
-				}
+				fields = append(fields, SchemaField{
+					Name:     parentKey + key,
+					Label:    parentKey + key,
+					Type:     reflect.TypeOf(firstElement).Name(),
+					List:     true,
+					Required: true,
+				})
 			} else {
-				subFields := make(map[string]interface{})
-				subFieldNames := parseJson("", subFieldMap, subFields)
-				fields[parentKey+key] = schemaArray{
-					Type: "array",
-					Items: schemaObject{
-						Type:       "object",
-						Properties: subFields,
-						Required:   subFieldNames,
+				subFields := parseJson("", subFieldMap)
+				fields = append(fields, SchemaField{
+					Name:     parentKey + key,
+					Label:    parentKey + key,
+					Type:     "object",
+					List:     true,
+					Required: true,
+					Object: &CollectionSchema{
+						Name:   parentKey + key,
+						Fields: subFields,
 					},
-				}
+				})
 			}
 			break
 		case map[string]interface{}:
-			fieldNames = append(fieldNames, parseJson(parentKey+key, v, fields)...)
+			fields = append(fields, parseJson(parentKey+key, v)...)
 			break
 		default:
-			// No more nested so append the type
-			fieldNames = append(fieldNames, parentKey+key)
-			fields[parentKey+key] = map[string]string{
-				"type": schemaTypeMap[reflect.TypeOf(v).Name()],
-			}
+			fields = append(fields, SchemaField{
+				Name:     parentKey + key,
+				Label:    parentKey + key,
+				Type:     reflect.TypeOf(v).Name(),
+				Required: true,
+			})
 			break
 		}
 	}
 
-	return fieldNames
+	return fields
+}
+
+func validateJson(schema *CollectionSchema, v map[string]interface{}, parent string) error {
+	if len(parent) > 0 {
+		parent += "/"
+	}
+	for _, f := range schema.Fields {
+		if f.Required {
+			fieldName := fmt.Sprintf("%s%s", parent, f.Name)
+			if v[f.Name] == nil {
+				return errors.New(fmt.Sprintf("missing field: %s", fieldName))
+			}
+			if f.Type == "object" {
+				var objects []interface{}
+				var ok bool
+				if f.List {
+					objects, ok = v[f.Name].([]interface{})
+					if !ok {
+						return errors.New(fmt.Sprintf("invalid input list format at field: %s", fieldName))
+					}
+				} else {
+					objects = []interface{}{v[f.Name]}
+				}
+				for _, object := range objects {
+					o, ok := object.(map[string]interface{})
+					if !ok {
+						return errors.New(fmt.Sprintf("invalid input format at field: %s", fieldName))
+					}
+					err := validateJson(f.Object, o, fieldName)
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }

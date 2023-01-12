@@ -44,6 +44,8 @@ var (
 	errCmsSchemaGeneration = errf(400, "err_cms_004", "schema generation failed")
 	errCmsGetComponents    = errf(404, "err_cms_005", "failed to get components")
 	errCmsParseBlob        = errf(400, "err_cms_006", "failed to parse blob")
+	errCmsParseSchema      = errf(400, "err_cms_006", "failed to parse entry schema")
+	errCmsParseMarkdown    = errf(400, "err_cms_007", "failed to parse markdown")
 )
 
 type errorData struct {

@@ -17,7 +17,7 @@ func TestValidateActualSchema(t *testing.T) {
 		t.Error(err)
 	}
 
-	var v interface{}
+	var v map[string]interface{}
 	if err := json.Unmarshal(data, &v); err != nil {
 		t.Error(err)
 	}
@@ -35,7 +35,7 @@ func TestValidateEmptySchema(t *testing.T) {
 		t.Error(err)
 	}
 
-	var v interface{}
+	var v map[string]interface{}
 	if err := json.Unmarshal(data, &v); err != nil {
 		t.Error(err)
 	}
@@ -48,4 +48,17 @@ func TestValidateEmptySchema(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+func TestGenerateSchema(t *testing.T) {
+	data, err := ioutil.ReadFile("testdata/payload.json")
+	if err != nil {
+		t.Error(err)
+	}
+
+	schema, err := GenerateSchema("test", string(data))
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(schema)
 }

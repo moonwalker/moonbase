@@ -37,6 +37,13 @@ type commitEntry struct {
 type ComponentsTree map[string]string
 type ComponentsTreeSha string
 
+type entryItem struct {
+	Name    string                 `json:"name"`
+	Type    string                 `json:"type"`
+	Content map[string]interface{} `json:"content"`
+	Schema  cms.CollectionSchema   `json:"schema,omitempty"`
+}
+
 var (
 	shaCache = cache.NewGeneric[ComponentsTreeSha](30 * time.Minute)
 )
@@ -328,7 +335,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 	ext := filepath.Ext(entryData.Name)
 
-	if !entryData.SaveSchema && ext == ".json" {
+	if !entryData.SaveSchema {
 		schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.WorkDir)
 		if schema.Available() {
 			err = schema.ValidateString(entryData.Contents)
@@ -345,14 +352,23 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(cmsConfig.WorkDir, collection, entryName)
 	commitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, entryName)
 
-	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &entryData.Contents, commitMessage)
+	content := entryData.Contents
+	if ext == ".md" || ext == ".mdx" {
+		content, err = cms.JsonToMarkdown(content)
+		if err != nil {
+			errCmsParseMarkdown().Log(r, err).Json(w)
+			return
+		}
+	}
+
+	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &content, commitMessage)
 	if err != nil {
 		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
-	if entryData.SaveSchema && ext == ".json" {
-		schema, err := cms.GenerateSchema(entryData.Contents)
+	if entryData.SaveSchema {
+		schema, err := cms.GenerateSchema(entryData.Name, entryData.Contents)
 		if err != nil {
 			errCmsSchemaGeneration().Log(r, err).Json(w)
 			return
@@ -396,6 +412,10 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(cmsConfig.WorkDir, collection, entry)
 
 	fc, resp, err := gh.GetFileContent(ctx, accessToken, owner, repo, ref, path)
+	if err != nil {
+		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+		return
+	}
 	blob, err := fc.GetContent()
 	if err != nil {
 		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
@@ -408,7 +428,19 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 		errCmsParseBlob().Status(http.StatusInternalServerError).Log(r, err).Json(w)
 		return
 	}
-	jsonResponse(w, http.StatusOK, mc)
+
+	p := filepath.Join(cmsConfig.WorkDir, collection, cms.JsonSchemaName)
+	s, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, p)
+
+	cs := cms.CollectionSchema{}
+	err = json.Unmarshal(s, &cs)
+	if err != nil {
+		errCmsParseSchema().Status(http.StatusInternalServerError).Log(r, err).Json(w)
+		return
+	}
+
+	data := &entryItem{Name: *fc.Name, Type: blobType, Content: mc, Schema: cs}
+	jsonResponse(w, http.StatusOK, data)
 }
 
 // @Summary		Delete entry
