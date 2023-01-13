@@ -5,6 +5,7 @@ COPY go.mod go.sum ./
 COPY cmd ./cmd
 COPY docs ./docs
 COPY internal ./internal
+COPY pkg ./pkg
 COPY vendor ./vendor
 RUN apk add --no-cache git
 RUN CGO_ENABLED=0 GOOS=linux go build -o moonbase ./cmd/moonbase
