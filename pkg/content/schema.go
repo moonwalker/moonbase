@@ -26,15 +26,15 @@ type Validation struct {
 }
 
 type Field struct {
-	ID          string        `json:"id,omitempty"`
-	Label       string        `json:"label"`
-	Type        string        `json:"type"`
-	Default     interface{}   `json:"default,omitempty"`
-	Reference   bool          `json:"reference,omitempty"`
-	List        bool          `json:"list,omitempty"`
-	Localized   bool          `json:"localized,omitempty"`
-	Disabled    bool          `json:"disabled,omitempty"`
-	Validations []*Validation `json:"validations,omitempty"`
+	ID           string        `json:"id,omitempty"`
+	Label        string        `json:"label"`
+	Type         string        `json:"type"`
+	DefaultValue interface{}   `json:"defaultValue,omitempty"`
+	Reference    bool          `json:"reference,omitempty"`
+	List         bool          `json:"list,omitempty"`
+	Localized    bool          `json:"localized,omitempty"`
+	Disabled     bool          `json:"disabled,omitempty"`
+	Validations  []*Validation `json:"validations,omitempty"`
 }
 
 type Schema struct {
