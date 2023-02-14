@@ -17,7 +17,7 @@ import (
 
 	"github.com/moonwalker/moonbase/internal/cache"
 	"github.com/moonwalker/moonbase/internal/cms"
-	"github.com/moonwalker/moonbase/internal/gh"
+	gh "github.com/moonwalker/moonbase/pkg/github"
 )
 
 type collectionPayload struct {

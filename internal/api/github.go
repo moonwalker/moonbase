@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/moonwalker/moonbase/internal/gh"
+	gh "github.com/moonwalker/moonbase/pkg/github"
 )
 
 type repositoryList struct {

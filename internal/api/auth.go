@@ -14,8 +14,8 @@ import (
 	"github.com/rs/xid"
 
 	"github.com/moonwalker/moonbase/internal/env"
-	"github.com/moonwalker/moonbase/internal/gh"
 	"github.com/moonwalker/moonbase/internal/jwt"
+	gh "github.com/moonwalker/moonbase/pkg/github"
 )
 
 // test the flow:
