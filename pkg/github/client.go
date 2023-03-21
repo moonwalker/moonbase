@@ -425,3 +425,33 @@ func downloadFile(downloadURL string) ([]byte, error) {
 
 	return b, nil
 }
+
+func GetSchemasRecursive(ctx context.Context, accessToken string, owner string, repo string, ref, string, path string) ([]*github.RepositoryContent, *github.Response, error) {
+	githubClient := ghClient(ctx, accessToken)
+
+	sha, resp, err := getDirectorySha(ctx, githubClient, owner, repo, ref, path)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if sha == "" {
+		sha = "main"
+	}
+
+	tree, resp, err := githubClient.Git.GetTree(ctx, owner, repo, sha, true)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	rcs := make([]*github.RepositoryContent, 0)
+	for _, te := range tree.Entries {
+		if *te.Type == "blob" && strings.Contains(*te.Path, "_schema.json") {
+			rc, _, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, filepath.Join(path, *te.Path), &github.RepositoryContentGetOptions{})
+			if err != nil {
+				return nil, resp, err
+			}
+			rcs = append(rcs, rc)
+		}
+	}
+	return rcs, resp, nil
+}
