@@ -426,7 +426,7 @@ func downloadFile(downloadURL string) ([]byte, error) {
 	return b, nil
 }
 
-func GetSchemasRecursive(ctx context.Context, accessToken string, owner string, repo string, ref, string, path string) ([]*github.RepositoryContent, *github.Response, error) {
+func GetSchemasRecursive(ctx context.Context, accessToken string, owner string, repo string, ref string, string, path string) ([]*github.RepositoryContent, *github.Response, error) {
 	githubClient := ghClient(ctx, accessToken)
 
 	sha, resp, err := getDirectorySha(ctx, githubClient, owner, repo, ref, path)
