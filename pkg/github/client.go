@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -283,7 +284,7 @@ func getDirectorySha(ctx context.Context, githubClient *github.Client, owner str
 	return "", resp, err
 }
 
-func GetContentsRecursive(ctx context.Context, accessToken string, owner string, repo string, ref string, path string) ([]*github.RepositoryContent, *github.Response, error) {
+func GetContentsRecursive_old(ctx context.Context, accessToken string, owner string, repo string, ref string, path string) ([]*github.RepositoryContent, *github.Response, error) {
 	githubClient := ghClient(ctx, accessToken)
 
 	sha, resp, err := getDirectorySha(ctx, githubClient, owner, repo, ref, path)
@@ -372,4 +373,55 @@ func GetArchivedContents(ctx context.Context, accessToken string, owner string, 
 	}
 
 	return rcs, resp, nil
+}
+
+func GetContentsRecursive(ctx context.Context, accessToken string, owner string, repo string, ref string, path string) ([]*github.RepositoryContent, *github.Response, error) {
+	githubClient := ghClient(ctx, accessToken)
+
+	_, rc, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
+		Ref: ref,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	rcs := make([]*github.RepositoryContent, 0)
+	for _, c := range rc {
+		if *c.Type == "file" {
+			b, err := downloadFile(*c.DownloadURL)
+			if err != nil {
+				return nil, resp, err
+			}
+			content := string(b)
+			if strings.Contains(content, "Not found") {
+				log.Fatal("couldn't download file")
+			}
+			c.Content = &content
+			rcs = append(rcs, c)
+		}
+		if *c.Type == "dir" {
+			rcr, _, err := GetContentsRecursive(ctx, accessToken, owner, repo, ref, *c.Path)
+			if err != nil {
+				return nil, resp, err
+			}
+			rcs = append(rcs, rcr...)
+		}
+	}
+
+	return rcs, resp, nil
+}
+
+func downloadFile(downloadURL string) ([]byte, error) {
+	resp, err := http.Get(downloadURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
 }
