@@ -1,9 +1,17 @@
 package github
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"context"
 	"errors"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/google/go-github/v48/github"
 	"golang.org/x/oauth2"
@@ -299,6 +307,67 @@ func GetContentsRecursive(ctx context.Context, accessToken string, owner string,
 				return nil, resp, err
 			}
 			rcs = append(rcs, rc)
+		}
+	}
+
+	return rcs, resp, nil
+}
+
+func GetArchivedContents(ctx context.Context, accessToken string, owner string, repo string, ref string, path string) ([]*github.RepositoryContent, *github.Response, error) {
+	githubClient := ghClient(ctx, accessToken)
+
+	url, resp, err := githubClient.Repositories.GetArchiveLink(ctx, owner, repo, github.Tarball, nil, false)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	res, err := http.Get(url.String())
+	if err != nil {
+		return nil, resp, err
+	}
+	defer res.Body.Close()
+
+	dir, err := os.MkdirTemp("", "git-archive")
+	if err != nil {
+		return nil, resp, err
+	}
+	defer os.RemoveAll(dir)
+
+	rcs := make([]*github.RepositoryContent, 0)
+
+	uncompressedStream, err := gzip.NewReader(res.Body)
+	if err != nil {
+		return nil, resp, fmt.Errorf("gzip NewReader failed: %s", err.Error())
+	}
+
+	tarReader := tar.NewReader(uncompressedStream)
+
+	for {
+		header, err := tarReader.Next()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return nil, resp, fmt.Errorf("tarReader Next() failed: %s", err.Error())
+		}
+
+		if header.Typeflag == tar.TypeReg {
+			fi := strings.Index(header.Name, "/")
+			li := strings.LastIndex(header.Name, "/")
+			path := header.Name[fi:]
+			name := header.Name[li:]
+			bs, err := ioutil.ReadAll(tarReader)
+			if err != nil {
+				return nil, resp, fmt.Errorf("tarReader ReadAll() failed: %s", err.Error())
+			}
+			content := string(bs)
+			rcs = append(rcs, &github.RepositoryContent{
+				Name:    &name,
+				Path:    &path,
+				Content: &content,
+			})
 		}
 	}
 
