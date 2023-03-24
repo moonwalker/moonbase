@@ -437,7 +437,6 @@ func GetSchemasRecursive(ctx context.Context, accessToken string, owner string, 
 	if sha == "" {
 		sha = "main"
 	}
-
 	tree, resp, err := githubClient.Git.GetTree(ctx, owner, repo, sha, true)
 	if err != nil {
 		return nil, resp, err
