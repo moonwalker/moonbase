@@ -7,8 +7,6 @@ import (
 	"reflect"
 )
 
-const JsonSchemaName = "_schema.json"
-
 type Schema struct {
 	jsonSchema *CollectionSchema
 }

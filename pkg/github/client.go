@@ -19,6 +19,7 @@ import (
 	githuboauth "golang.org/x/oauth2/github"
 
 	"github.com/moonwalker/moonbase/internal/env"
+	"github.com/moonwalker/moonbase/pkg/content"
 )
 
 var (
@@ -443,7 +444,7 @@ func GetSchemasRecursive(ctx context.Context, accessToken string, owner string, 
 
 	rcs := make([]*github.RepositoryContent, 0)
 	for _, te := range tree.Entries {
-		if *te.Type == "blob" && strings.HasSuffix(*te.Path, "_schema.json") {
+		if *te.Type == "blob" && strings.HasSuffix(*te.Path, content.JsonSchemaName) {
 			rc, _, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, filepath.Join(path, *te.Path), &github.RepositoryContentGetOptions{})
 			if err != nil {
 				return nil, resp, err

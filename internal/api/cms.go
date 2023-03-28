@@ -60,7 +60,7 @@ func getConfig(ctx context.Context, accessToken string, owner string, repo strin
 // schema
 
 func getSchema(ctx context.Context, accessToken string, owner string, repo string, ref string, collection string, workdir string) *cms.Schema {
-	p := filepath.Join(workdir, collection, cms.JsonSchemaName)
+	p := filepath.Join(workdir, collection, content.JsonSchemaName)
 	data, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, p)
 	return cms.NewSchema(data)
 }
@@ -354,16 +354,15 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join(cmsConfig.WorkDir, collection, entryName)
 	commitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, entryName)
 
-	content := entryData.Contents
+	contentData := entryData.Contents
 	if ext == ".md" || ext == ".mdx" {
-		content, err = cms.JsonToMarkdown(content)
+		contentData, err = cms.JsonToMarkdown(contentData)
 		if err != nil {
 			errCmsParseMarkdown().Log(r, err).Json(w)
 			return
 		}
 	}
-
-	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &content, commitMessage)
+	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &contentData, commitMessage)
 	if err != nil {
 		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
@@ -375,8 +374,8 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 			errCmsSchemaGeneration().Log(r, err).Json(w)
 			return
 		}
-		schemaPath := filepath.Join(cmsConfig.WorkDir, collection, cms.JsonSchemaName)
-		schemaCommitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, cms.JsonSchemaName)
+		schemaPath := filepath.Join(cmsConfig.WorkDir, collection, content.JsonSchemaName)
+		schemaCommitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, content.JsonSchemaName)
 		resp, err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, schemaPath, &schema, schemaCommitMessage)
 		if err != nil {
 			errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
@@ -431,7 +430,7 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p := filepath.Join(cmsConfig.WorkDir, collection, cms.JsonSchemaName)
+	p := filepath.Join(cmsConfig.WorkDir, collection, content.JsonSchemaName)
 	s, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, p)
 
 	cs := content.Schema{}
