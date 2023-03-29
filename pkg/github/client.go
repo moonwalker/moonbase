@@ -412,6 +412,35 @@ func GetContentsRecursive(ctx context.Context, accessToken string, owner string,
 	return rcs, resp, nil
 }
 
+func GetAllLocaleContents(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, prefix string) ([]*github.RepositoryContent, *github.Response, error) {
+	githubClient := ghClient(ctx, accessToken)
+
+	_, rc, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
+		Ref: ref,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	rcs := make([]*github.RepositoryContent, 0)
+	for _, c := range rc {
+		if *c.Type == "file" && strings.HasPrefix(*c.Name, prefix) {
+			b, err := downloadFile(*c.DownloadURL)
+			if err != nil {
+				return nil, resp, err
+			}
+			content := string(b)
+			if strings.Contains(content, "Not found") {
+				log.Fatal("couldn't download file")
+			}
+			c.Content = &content
+			rcs = append(rcs, c)
+		}
+	}
+
+	return rcs, resp, nil
+}
+
 func downloadFile(downloadURL string) ([]byte, error) {
 	resp, err := http.Get(downloadURL)
 	if err != nil {
