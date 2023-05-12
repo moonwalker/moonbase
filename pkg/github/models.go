@@ -13,6 +13,7 @@ type Repository struct {
 }
 
 type Commit struct {
+	ID       string   `json:"id"`
 	Added    []string `json:"added"`
 	Removed  []string `json:"removed"`
 	Modified []string `json:"modified"`
