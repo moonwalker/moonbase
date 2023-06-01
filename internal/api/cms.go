@@ -1,10 +1,14 @@
 package api
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -477,4 +481,83 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// @Summary		Upload image
+// @Tags		cms
+// @Accept		file:image/*
+// @Param		owner			path	string		true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string		true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string		true	"git ref (branch, tag, sha)"
+// @Param		payload	body	image	file		true	"uploaded image"
+// @Success		200
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}/_images	[post]
+// @Security	bearerToken
+func postImage(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	accessToken := accessTokenFromContext(ctx)
+
+	owner := chi.URLParam(r, "owner")
+	repo := chi.URLParam(r, "repo")
+	ref := chi.URLParam(r, "ref")
+
+	fileName := ""
+
+	reader, err := r.MultipartReader()
+	if err != nil {
+		errCmsGetFormReader().Log(r, err).Json(w)
+		return
+	}
+
+	var imgbytes []byte
+
+	for {
+		part, err := reader.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errCmsReadForm().Log(r, err).Json(w)
+			return
+		}
+		defer part.Close()
+		fileBytes, err := ioutil.ReadAll(part)
+		if err != nil {
+			errCmsReadContent().Log(r, err).Json(w)
+			return
+		}
+
+		if fileName == "" {
+			fileName = part.FileName()
+		}
+
+		imgbytes = append(imgbytes, fileBytes...)
+	}
+	imgbytes = bytes.Trim(imgbytes, "\xef\xbb\xbf")
+
+	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
+
+	path := filepath.Join(cmsConfig.WorkDir, "_images", fileName)
+	commitMessage := fmt.Sprintf("feat(images): upload %s", fileName)
+	encoding := "base64"
+	content := base64.StdEncoding.EncodeToString(imgbytes)
+
+	blob, resp, err := gh.CreateBlob(ctx, accessToken, owner, repo, ref, &content, &encoding)
+	if err != nil {
+		errReposCreateBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+		return
+	}
+	resp, err = gh.CommitBlobs(ctx, accessToken, owner, repo, ref, []gh.BlobEntry{
+		{
+			Path: path,
+			SHA:  blob.SHA,
+		}}, commitMessage)
+	if err != nil {
+		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+		return
+	}
+
+	data := &entryItem{Name: fileName}
+	jsonResponse(w, http.StatusOK, data)
 }
