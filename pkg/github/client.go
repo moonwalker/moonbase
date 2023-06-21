@@ -304,7 +304,9 @@ func DeleteFiles(ctx context.Context, accessToken string, owner string, repo str
 		}
 	}
 
-	resp, err = CommitBlobs(ctx, accessToken, owner, repo, ref, items, commitMessage)
+	if len(items) > 0 {
+		resp, err = CommitBlobs(ctx, accessToken, owner, repo, ref, items, commitMessage)
+	}
 	return resp, err
 }
 
