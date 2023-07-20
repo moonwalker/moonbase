@@ -266,17 +266,26 @@ func getEntries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	treeItems := make([]*treeItem, 0)
+	groups := make(map[string]*treeItem)
 	for _, rc := range repoContents {
 		if *rc.Type == "file" {
-			treeItems = append(treeItems, &treeItem{
-				Name: rc.Name,
-				// Path: rc.Path,
-				Type: rc.Type,
-				SHA:  rc.SHA,
-			})
+			b, _, f := strings.Cut(*rc.Name, "_")
+			if f && b != "" {
+
+				if _, ok := groups[b]; !ok {
+					tI := &treeItem{
+						Name: &b,
+						Path: rc.Path,
+						Type: rc.Type,
+						SHA:  rc.SHA,
+					}
+					groups[b] = tI
+					treeItems = append(treeItems, tI)
+				}
+			}
+
 		}
 	}
-
 	jsonResponse(w, http.StatusOK, treeItems)
 }
 
@@ -414,37 +423,61 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 	entry := chi.URLParam(r, "entry")
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.WorkDir, collection, entry)
-
-	fc, resp, err := gh.GetFileContent(ctx, accessToken, owner, repo, ref, path)
+	schemaPath := filepath.Join(cmsConfig.WorkDir, collection, content.JsonSchemaName)
+	sc, resp, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, schemaPath)
 	if err != nil {
 		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
-	blob, err := fc.GetContent()
+	cs := &content.Schema{}
+	err = json.Unmarshal(sc, &cs)
+	if err != nil {
+		errCmsParseSchema().Status(resp.StatusCode).Log(r, err).Json(w)
+		return
+	}
+
+	// Get files in directory
+	path := filepath.Join(cmsConfig.WorkDir, collection)
+	rc, resp, err := gh.GetAllLocaleContents(ctx, accessToken, owner, repo, ref, path, entry)
 	if err != nil {
 		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
-		return
 	}
 
-	blobType := filepath.Ext(*fc.Name)
-	mc, err := cms.ParseBlob(blobType, blob)
+	mc, err := cms.MergeLocalisedContent(rc)
 	if err != nil {
-		errCmsParseBlob().Status(http.StatusInternalServerError).Log(r, err).Json(w)
+		errCmsMergeLocalizedContent().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
-	p := filepath.Join(cmsConfig.WorkDir, collection, content.JsonSchemaName)
-	s, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, p)
+	// fc, resp, err := gh.GetFileContent(ctx, accessToken, owner, repo, ref, path)
+	// if err != nil {
+	// 	errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+	// 	return
+	// }
+	// blob, err := fc.GetContent()
+	// if err != nil {
+	// 	errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+	// 	return
+	// }
 
-	cs := content.Schema{}
-	err = json.Unmarshal(s, &cs)
-	if err != nil {
-		errCmsParseSchema().Status(http.StatusInternalServerError).Log(r, err).Json(w)
-		return
-	}
+	// blobType := filepath.Ext(*fc.Name)
+	// mc, err := cms.ParseBlob(blobType, blob)
+	// if err != nil {
+	// 	errCmsParseBlob().Status(http.StatusInternalServerError).Log(r, err).Json(w)
+	// 	return
+	// }
 
-	data := &entryItem{Name: *fc.Name, Type: blobType, Content: mc, Schema: cs}
+	// p := filepath.Join(cmsConfig.WorkDir, collection, content.JsonSchemaName)
+	// s, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, p)
+
+	// cs := content.Schema{}
+	// err = json.Unmarshal(s, &cs)
+	// if err != nil {
+	// 	errCmsParseSchema().Status(http.StatusInternalServerError).Log(r, err).Json(w)
+	// 	return
+	// }
+
+	data := &entryItem{Name: *rc[0].Name, Type: *rc[0].Type, Content: mc, Schema: *cs}
 	jsonResponse(w, http.StatusOK, data)
 }
 

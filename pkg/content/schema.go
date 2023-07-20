@@ -62,3 +62,9 @@ type ContentData struct {
 	UpdatedBy string                 `json:"updatedBy,omitempty"`
 	Version   int                    `json:"version,omitempty"`
 }
+
+type LocalizedContentData struct {
+	ID          string       `json:"id,omitempty"`
+	Locale      string       `json:"locale,omitempty"`
+	ContentData *ContentData `json:"ContentData,omitempty"`
+}
