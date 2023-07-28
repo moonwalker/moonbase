@@ -3,7 +3,6 @@ package cms
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/google/go-github/v48/github"
@@ -24,16 +23,12 @@ func MergeLocalisedContent(rc []*github.RepositoryContent) (map[string]interface
 			}
 
 			mcd.LocalisedContent = append(mcd.LocalisedContent, lc)
-
-			fmt.Println("MCD:", &mcd.LocalisedContent)
 		}
 	}
 	result := map[string]interface{}{
 		"Slug":             mcd.Slug,
 		"LocalisedContent": mcd.LocalisedContent,
 	}
-	fmt.Println("Result:", result)
-
 	return result, nil
 }
 
