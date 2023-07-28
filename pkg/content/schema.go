@@ -63,8 +63,13 @@ type ContentData struct {
 	Version   int                    `json:"version,omitempty"`
 }
 
-type LocalizedContentData struct {
+type LocalisedContentData struct {
 	ID          string       `json:"id,omitempty"`
 	Locale      string       `json:"locale,omitempty"`
 	ContentData *ContentData `json:"ContentData,omitempty"`
+}
+
+type MergedContentData struct {
+	Slug             string                  `json:"slug,omitempty"`
+	LocalisedContent []*LocalisedContentData `json:"localisedContent,omitempty"`
 }

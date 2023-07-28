@@ -449,34 +449,6 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// fc, resp, err := gh.GetFileContent(ctx, accessToken, owner, repo, ref, path)
-	// if err != nil {
-	// 	errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
-	// 	return
-	// }
-	// blob, err := fc.GetContent()
-	// if err != nil {
-	// 	errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
-	// 	return
-	// }
-
-	// blobType := filepath.Ext(*fc.Name)
-	// mc, err := cms.ParseBlob(blobType, blob)
-	// if err != nil {
-	// 	errCmsParseBlob().Status(http.StatusInternalServerError).Log(r, err).Json(w)
-	// 	return
-	// }
-
-	// p := filepath.Join(cmsConfig.WorkDir, collection, content.JsonSchemaName)
-	// s, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, p)
-
-	// cs := content.Schema{}
-	// err = json.Unmarshal(s, &cs)
-	// if err != nil {
-	// 	errCmsParseSchema().Status(http.StatusInternalServerError).Log(r, err).Json(w)
-	// 	return
-	// }
-
 	data := &entryItem{Name: *rc[0].Name, Type: *rc[0].Type, Content: mc, Schema: *cs}
 	jsonResponse(w, http.StatusOK, data)
 }
