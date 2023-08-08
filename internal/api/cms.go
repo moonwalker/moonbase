@@ -44,10 +44,10 @@ type ComponentsTree map[string]string
 type ComponentsTreeSha string
 
 type entryItem struct {
-	Name    string                 `json:"name"`
-	Type    string                 `json:"type"`
-	Content map[string]interface{} `json:"content"`
-	Schema  content.Schema         `json:"schema,omitempty"`
+	Name    string                            `json:"name"`
+	Type    string                            `json:"type"`
+	Content map[string]map[string]interface{} `json:"content"`
+	Schema  content.Schema                    `json:"schema,omitempty"`
 }
 
 var (
@@ -443,13 +443,13 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 	}
 
-	mc, err := cms.MergeLocalisedContent(rc)
+	mc, err := cms.MergeLocalisedContent(rc, *cs)
 	if err != nil {
 		errCmsMergeLocalizedContent().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
-	data := &entryItem{Name: *rc[0].Name, Type: *rc[0].Type, Content: mc, Schema: *cs}
+	data := &entryItem{Name: mc.Name, Type: mc.Type, Content: mc.Fields, Schema: *cs}
 	jsonResponse(w, http.StatusOK, data)
 }
 
