@@ -7,7 +7,9 @@ import (
 )
 
 const (
-	ConfigPath = "moonbase.yaml"
+	ConfigPath     = "moonbase.yaml"
+	ImagesFolder   = "_images"
+	SettingsFolder = "_settings"
 )
 
 type Config struct {
