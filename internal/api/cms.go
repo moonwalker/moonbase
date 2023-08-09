@@ -50,6 +50,11 @@ type entryItem struct {
 	Schema  content.Schema                    `json:"schema,omitempty"`
 }
 
+type settingItem struct {
+	Name    string                 `json:"name"`
+	Content map[string]interface{} `json:"content"`
+}
+
 var (
 	shaCache = cache.NewGeneric[ComponentsTreeSha](30 * time.Minute)
 )
@@ -652,6 +657,6 @@ func getSetting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := &entryItem{Name: *fc.Name, Type: blobType, Content: mc}
+	data := &settingItem{Name: *fc.Name, Content: mc}
 	jsonResponse(w, http.StatusOK, data)
 }
