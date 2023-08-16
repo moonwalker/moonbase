@@ -9,6 +9,15 @@ import (
 	"github.com/moonwalker/moonbase/pkg/content"
 )
 
+func GetNameLocaleFromFilename(fn string) (string, string) {
+	ui := strings.LastIndex(fn, "_")
+	di := strings.LastIndex(fn, ".")
+	name := fn[:ui]
+	locale := fn[ui+1 : di]
+
+	return name, locale
+}
+
 func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*content.MergedContentData, error) {
 	result := &content.MergedContentData{}
 	fields := make(map[string]map[string]interface{})
@@ -92,13 +101,4 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 		}
 	}
 	return result, nil
-}
-
-func GetNameLocaleFromFilename(fn string) (string, string) {
-	ui := strings.LastIndex(fn, "_")
-	di := strings.LastIndex(fn, ".")
-	name := fn[:ui]
-	locale := fn[ui+1 : di]
-
-	return name, locale
 }
