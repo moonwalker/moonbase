@@ -2,17 +2,17 @@ package cms
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"testing"
 )
 
 func TestValidateActualSchema(t *testing.T) {
-	sch, err := ioutil.ReadFile("testdata/schema.json")
+	sch, err := os.ReadFile("testdata/schema.json")
 	if err != nil {
 		t.Error(err)
 	}
 
-	data, err := ioutil.ReadFile("testdata/payload.json")
+	data, err := os.ReadFile("testdata/payload.json")
 	if err != nil {
 		t.Error(err)
 	}
@@ -30,7 +30,7 @@ func TestValidateActualSchema(t *testing.T) {
 }
 
 func TestValidateEmptySchema(t *testing.T) {
-	data, err := ioutil.ReadFile("testdata/payload.json")
+	data, err := os.ReadFile("testdata/payload.json")
 	if err != nil {
 		t.Error(err)
 	}
@@ -51,7 +51,7 @@ func TestValidateEmptySchema(t *testing.T) {
 }
 
 func TestGenerateSchema(t *testing.T) {
-	data, err := ioutil.ReadFile("testdata/payload.json")
+	data, err := os.ReadFile("testdata/payload.json")
 	if err != nil {
 		t.Error(err)
 	}

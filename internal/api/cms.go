@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -527,7 +526,7 @@ func postImage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer part.Close()
-		fileBytes, err := ioutil.ReadAll(part)
+		fileBytes, err := io.ReadAll(part)
 		if err != nil {
 			errCmsReadContent().Log(r, err).Json(w)
 			return

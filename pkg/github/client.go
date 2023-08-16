@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -474,7 +473,7 @@ func GetArchivedContents(ctx context.Context, accessToken string, owner string, 
 			li := strings.LastIndex(header.Name, "/")
 			path := header.Name[fi:]
 			name := header.Name[li+1:]
-			bs, err := ioutil.ReadAll(tarReader)
+			bs, err := io.ReadAll(tarReader)
 			if err != nil {
 				return nil, resp, fmt.Errorf("tarReader ReadAll() failed: %s", err.Error())
 			}
@@ -583,6 +582,29 @@ func GetAllLocaleContentsWithTree(ctx context.Context, accessToken string, owner
 			rc.Content = &c
 			rcs = append(rcs, rc)
 		}
+	}
+
+	return rcs, resp, nil
+}
+
+func GetFilesContent(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, files []string) ([]*github.RepositoryContent, *github.Response, error) {
+	githubClient := ghClient(ctx, accessToken)
+	var resp *github.Response
+
+	rcs := make([]*github.RepositoryContent, 0)
+	for _, fn := range files {
+		fnWithPath := filepath.Join(path, fn)
+		rc, _, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, fnWithPath, &github.RepositoryContentGetOptions{})
+		if err != nil {
+			return nil, resp, err
+		}
+		c, err := rc.GetContent()
+		if err != nil {
+			return nil, resp, err
+		}
+		rc.Content = &c
+		rcs = append(rcs, rc)
+		resp = resp
 	}
 
 	return rcs, resp, nil
