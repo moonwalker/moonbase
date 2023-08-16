@@ -25,11 +25,10 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 	// Get default locale content
 	for _, c := range rc {
 		if *c.Name != content.JsonSchemaName {
-			// TODO: select name of chosen or default locale file only??
-			result.Name = *c.Name
-			result.Type = *c.Type
-
-			if content.DefaultLocale == getLocaleFromFilename(*c.Name) {
+			n, l := GetNameLocaleFromFilename(*c.Name)
+			if content.DefaultLocale == l {
+				result.Name = n
+				result.Type = *c.Type
 				cnt, err := c.GetContent()
 				if err != nil {
 					return nil, fmt.Errorf("error getting repo content: %s", err)
@@ -67,7 +66,7 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 	for _, c := range rc {
 		if *c.Name != content.JsonSchemaName {
 			lcd := &content.ContentData{}
-			lcl := getLocaleFromFilename(*c.Name)
+			_, lcl := GetNameLocaleFromFilename(*c.Name)
 
 			if lcl != content.DefaultLocale {
 				cnt, err := c.GetContent()
@@ -95,10 +94,11 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 	return result, nil
 }
 
-func getLocaleFromFilename(fn string) string {
+func GetNameLocaleFromFilename(fn string) (string, string) {
 	ui := strings.LastIndex(fn, "_")
 	di := strings.LastIndex(fn, ".")
+	name := fn[:ui]
 	locale := fn[ui+1 : di]
 
-	return locale
+	return name, locale
 }

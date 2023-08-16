@@ -271,24 +271,17 @@ func getEntries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	treeItems := make([]*treeItem, 0)
-	groups := make(map[string]*treeItem)
 	for _, rc := range repoContents {
 		if *rc.Type == "file" {
-			b, _, f := strings.Cut(*rc.Name, "_")
-			if f && b != "" {
-
-				if _, ok := groups[b]; !ok {
-					tI := &treeItem{
-						Name: &b,
-						Path: rc.Path,
-						Type: rc.Type,
-						SHA:  rc.SHA,
-					}
-					groups[b] = tI
-					treeItems = append(treeItems, tI)
-				}
+			fn, l := cms.GetNameLocaleFromFilename(*rc.Name)
+			if fn != "" && l == content.DefaultLocale {
+				treeItems = append(treeItems, &treeItem{
+					Name: &fn,
+					Path: rc.Path,
+					Type: rc.Type,
+					SHA:  rc.SHA,
+				})
 			}
-
 		}
 	}
 	jsonResponse(w, http.StatusOK, treeItems)
