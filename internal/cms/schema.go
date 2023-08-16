@@ -2,7 +2,6 @@ package cms
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 )
@@ -118,10 +117,8 @@ func parseJson(parentKey string, obj interface{}) []SchemaField {
 					},
 				})
 			}
-			break
 		case map[string]interface{}:
 			fields = append(fields, parseJson(parentKey+key, v)...)
-			break
 		default:
 			fields = append(fields, SchemaField{
 				Name:     parentKey + key,
@@ -129,7 +126,6 @@ func parseJson(parentKey string, obj interface{}) []SchemaField {
 				Type:     reflect.TypeOf(v).Name(),
 				Required: true,
 			})
-			break
 		}
 	}
 
@@ -144,7 +140,7 @@ func validateJson(schema *CollectionSchema, v map[string]interface{}, parent str
 		if f.Required {
 			fieldName := fmt.Sprintf("%s%s", parent, f.Name)
 			if v[f.Name] == nil {
-				return errors.New(fmt.Sprintf("missing field: %s", fieldName))
+				return fmt.Errorf("missing field: %s", fieldName)
 			}
 			if f.Type == "object" {
 				var objects []interface{}
@@ -152,7 +148,7 @@ func validateJson(schema *CollectionSchema, v map[string]interface{}, parent str
 				if f.List {
 					objects, ok = v[f.Name].([]interface{})
 					if !ok {
-						return errors.New(fmt.Sprintf("invalid input list format at field: %s", fieldName))
+						return fmt.Errorf("invalid input list format at field: %s", fieldName)
 					}
 				} else {
 					objects = []interface{}{v[f.Name]}
@@ -160,7 +156,7 @@ func validateJson(schema *CollectionSchema, v map[string]interface{}, parent str
 				for _, object := range objects {
 					o, ok := object.(map[string]interface{})
 					if !ok {
-						return errors.New(fmt.Sprintf("invalid input format at field: %s", fieldName))
+						return fmt.Errorf("invalid input format at field: %s", fieldName)
 					}
 					err := validateJson(f.Object, o, fieldName)
 					if err != nil {

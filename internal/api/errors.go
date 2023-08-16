@@ -71,9 +71,7 @@ func errf(statusCode int, code, message string) func() *errorData {
 }
 
 func (e *errorData) Details(a ...string) *errorData {
-	for _, arg := range a {
-		e.Detailed = append(e.Detailed, arg)
-	}
+	e.Detailed = append(e.Detailed, a...)
 	return e
 }
 
