@@ -52,9 +52,6 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 				if result.Fields[k] == nil {
 					result.Fields[k] = make(map[string]interface{})
 				}
-				if result.Fields[k][l] == nil {
-					result.Fields[k][l] = make(map[string]interface{})
-				}
 				// Check if field is localized
 				if l == content.DefaultLocale || localizedFields[k] {
 					result.Fields[k][l] = v
