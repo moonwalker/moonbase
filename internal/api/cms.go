@@ -43,10 +43,10 @@ type ComponentsTree map[string]string
 type ComponentsTreeSha string
 
 type entryItem struct {
-	Name    string                            `json:"name"`
-	Type    string                            `json:"type"`
-	Content map[string]map[string]interface{} `json:"content"`
-	Schema  content.Schema                    `json:"schema,omitempty"`
+	Name    string                     `json:"name"`
+	Type    string                     `json:"type"`
+	Content *content.MergedContentData `json:"content"`
+	Schema  content.Schema             `json:"schema,omitempty"`
 }
 
 type settingItem struct {
@@ -446,7 +446,7 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := &entryItem{Name: mc.Name, Type: mc.Type, Content: mc.Fields, Schema: *cs}
+	data := &entryItem{Name: mc.Name, Type: mc.Type, Content: mc, Schema: *cs}
 	jsonResponse(w, http.StatusOK, data)
 }
 
