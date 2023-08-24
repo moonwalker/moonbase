@@ -10,6 +10,11 @@ import (
 	"github.com/moonwalker/moonbase/pkg/content"
 )
 
+type localePayloads struct {
+	Name     string `json:"name"`
+	Contents string `json:"contents"`
+}
+
 func GetNameLocaleFromFilename(fn string) (string, string) {
 	ui := strings.LastIndex(fn, "_")
 	di := strings.LastIndex(fn, ".")
@@ -89,6 +94,52 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 			}
 		}
 	}
-
 	return result, nil
+}
+
+func SeparateLocalisedContent(mcd content.MergedContentData) ([]content.SeparatedContentData, error) {
+	var res []content.SeparatedContentData
+	var locales []string
+	defaultValues := content.ContentData{
+		ID:        mcd.ID,
+		CreatedAt: mcd.CreatedAt.String(),
+		CreatedBy: mcd.CreatedBy,
+		UpdatedAt: mcd.UpdatedAt.String(),
+		UpdatedBy: mcd.UpdatedBy,
+		Fields:    make(map[string]interface{}),
+	}
+
+	// Get content locales
+	for _, value := range mcd.Fields {
+		if len(value) > 1 && len(locales) < 1 {
+			for locale, _ := range value {
+				locales = append(locales, locale)
+			}
+		}
+	}
+
+	for _, l := range locales {
+		scd := content.SeparatedContentData{}
+		scd.FileName = fmt.Sprintf("%s_%s.json", mcd.Name, l)
+
+		for key, value := range mcd.Fields {
+			if defaultValues.Fields[key] == nil {
+				defaultValues.Fields[key] = make(map[string]interface{})
+			}
+			if value[l] != nil {
+				defaultValues.Fields[key] = value[l]
+			} else {
+				defaultValues.Fields[key] = value[content.DefaultLocale]
+			}
+		}
+		s, err := json.Marshal(defaultValues)
+		if err != nil {
+			return nil, fmt.Errorf("error marshalling content data:%s", err)
+		}
+		scd.ContentData = string(s[:])
+
+		res = append(res, scd)
+	}
+
+	return res, nil
 }
