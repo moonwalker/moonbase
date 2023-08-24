@@ -361,37 +361,58 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	fname := strings.TrimSuffix(filepath.Base(entryData.Name), ext)
 	entryName := slug.Make(fname) + ext
 
-	path := filepath.Join(cmsConfig.WorkDir, collection, entryName)
+	// path := filepath.Join(cmsConfig.WorkDir, collection, entryName)
 	commitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, entryName)
 
-	contentData := entryData.Contents
-	if ext == ".md" || ext == ".mdx" {
-		contentData, err = cms.JsonToMarkdown(contentData)
-		if err != nil {
-			errCmsParseMarkdown().Log(r, err).Json(w)
-			return
-		}
-	}
-	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &contentData, commitMessage)
+	contentData := content.MergedContentData{}
+	err = json.Unmarshal([]byte(entryData.Contents), &contentData)
 	if err != nil {
-		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+		errCmsReadContent().Log(r, err).Json(w)
 		return
 	}
 
-	if entryData.SaveSchema {
-		schema, err := cms.GenerateSchema(entryData.Name, entryData.Contents)
-		if err != nil {
-			errCmsSchemaGeneration().Log(r, err).Json(w)
-			return
-		}
-		schemaPath := filepath.Join(cmsConfig.WorkDir, collection, content.JsonSchemaName)
-		schemaCommitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, content.JsonSchemaName)
-		resp, err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, schemaPath, &schema, schemaCommitMessage)
+	s, err := cms.SeparateLocalisedContent(contentData)
+	if err != nil {
+		errCmsSeparateLocalizedContent().Log(r, err).Json(w)
+		return
+	}
+	for _, i := range s {
+		path := filepath.Join(cmsConfig.WorkDir, collection, i.FileName)
+		resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &i.ContentData, commitMessage)
 		if err != nil {
 			errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 			return
 		}
 	}
+	// if ext == ".md" || ext == ".mdx" {
+	// 	contentData, err = cms.JsonToMarkdown(contentData)
+	// 	if err != nil {
+	// 		errCmsParseMarkdown().Log(r, err).Json(w)
+	// 		return
+	// 	}
+	// }
+
+	// TODO: Uncomment to save to GH
+	// resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &contentData, commitMessage)
+	// if err != nil {
+	// 	errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+	// 	return
+	// }
+
+	// if entryData.SaveSchema {
+	// 	schema, err := cms.GenerateSchema(entryData.Name, entryData.Contents)
+	// 	if err != nil {
+	// 		errCmsSchemaGeneration().Log(r, err).Json(w)
+	// 		return
+	// 	}
+	// 	schemaPath := filepath.Join(cmsConfig.WorkDir, collection, content.JsonSchemaName)
+	// 	schemaCommitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, content.JsonSchemaName)
+	// 	resp, err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, schemaPath, &schema, schemaCommitMessage)
+	// 	if err != nil {
+	// 		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+	// 		return
+	// 	}
+	// }
 
 	w.WriteHeader(http.StatusOK)
 }

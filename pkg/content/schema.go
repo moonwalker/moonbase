@@ -64,6 +64,11 @@ type ContentData struct {
 	Version   int                    `json:"version,omitempty"`
 }
 
+type SeparatedContentData struct {
+	FileName    string `json:"fileName"`
+	ContentData string `json:"contentData"`
+}
+
 type MergedContentData struct {
 	ID        string                            `json:"id,omitempty"`
 	Name      string                            `json:"name,omitempty"`
