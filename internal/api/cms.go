@@ -10,7 +10,6 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -28,6 +27,7 @@ type collectionPayload struct {
 }
 
 type entryPayload struct {
+	Login      string `json:"login"`
 	Name       string `json:"name"`
 	Contents   string `json:"contents"`
 	SaveSchema bool   `json:"save_schema"`
@@ -43,10 +43,10 @@ type ComponentsTree map[string]string
 type ComponentsTreeSha string
 
 type entryItem struct {
-	Name    string                 `json:"name"`
-	Type    string                 `json:"type"`
-	Content map[string]interface{} `json:"content"`
-	Schema  content.Schema         `json:"schema,omitempty"`
+	Name    string                     `json:"name"`
+	Type    string                     `json:"type"`
+	Content *content.MergedContentData `json:"content"`
+	Schema  content.Schema             `json:"schema,omitempty"`
 }
 
 type settingItem struct {
@@ -57,6 +57,10 @@ type settingItem struct {
 var (
 	shaCache = cache.NewGeneric[ComponentsTreeSha](30 * time.Minute)
 )
+
+func commitMessage(collection, method, name string) string {
+	return fmt.Sprintf("feat(%s): %s %s", collection, method, name)
+}
 
 // config
 
@@ -185,10 +189,9 @@ func postCollection(w http.ResponseWriter, r *http.Request) {
 
 	collectionName := slug.Make(collection.Name)
 	path := filepath.Join(cmsConfig.WorkDir, collectionName, ".gitkeep")
-	commitMessage := fmt.Sprintf("feat(content): create %s", collectionName)
 	emptyContent := ""
 
-	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &emptyContent, commitMessage)
+	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &emptyContent, commitMessage("content", "create", collectionName))
 	if err != nil {
 		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
@@ -227,8 +230,7 @@ func delCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	commitMessage := fmt.Sprintf("feat(content): delete %s", collectionName)
-	resp, err := gh.DeleteFolder(ctx, accessToken, owner, repo, ref, path, commitMessage)
+	resp, err := gh.DeleteFolder(ctx, accessToken, owner, repo, ref, path, commitMessage("content", "delete", collectionName))
 	if err != nil {
 		errCmsDeleteFolder().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
@@ -272,15 +274,17 @@ func getEntries(w http.ResponseWriter, r *http.Request) {
 	treeItems := make([]*treeItem, 0)
 	for _, rc := range repoContents {
 		if *rc.Type == "file" {
-			treeItems = append(treeItems, &treeItem{
-				Name: rc.Name,
-				// Path: rc.Path,
-				Type: rc.Type,
-				SHA:  rc.SHA,
-			})
+			fn, l := cms.GetNameLocaleFromFilename(*rc.Name)
+			if fn != "" && l == content.DefaultLocale {
+				treeItems = append(treeItems, &treeItem{
+					Name: &fn,
+					Path: rc.Path,
+					Type: rc.Type,
+					SHA:  rc.SHA,
+				})
+			}
 		}
 	}
-
 	jsonResponse(w, http.StatusOK, treeItems)
 }
 
@@ -343,7 +347,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	ext := filepath.Ext(entryData.Name)
+	path := filepath.Join(cmsConfig.WorkDir, collection)
 
 	// if !entryData.SaveSchema {
 	// 	schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.WorkDir)
@@ -356,40 +360,59 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	// 	}
 	// }
 
-	fname := strings.TrimSuffix(filepath.Base(entryData.Name), ext)
-	entryName := slug.Make(fname) + ext
-
-	path := filepath.Join(cmsConfig.WorkDir, collection, entryName)
-	commitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, entryName)
-
-	contentData := entryData.Contents
-	if ext == ".md" || ext == ".mdx" {
-		contentData, err = cms.JsonToMarkdown(contentData)
-		if err != nil {
-			errCmsParseMarkdown().Log(r, err).Json(w)
-			return
-		}
+	contentData := content.MergedContentData{}
+	err = json.Unmarshal([]byte(entryData.Contents), &contentData)
+	if err != nil {
+		errCmsReadContent().Log(r, err).Json(w)
+		return
 	}
-	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &contentData, commitMessage)
+
+	locales, statusCode, err := getLocales(ctx, accessToken, owner, repo, ref, path, entry)
+	if err != nil {
+		errReposGetTree().Status(statusCode).Log(r, err).Json(w)
+		return
+	}
+
+	items, err := cms.SeparateLocalisedContent(entryData.Login, contentData, locales, cmsConfig.WorkDir, collection)
+	if err != nil {
+		errCmsSeparateLocalizedContent().Log(r, err).Json(w)
+		return
+	}
+
+	resp, err := gh.CommitBlobs(ctx, accessToken, owner, repo, ref, items, commitMessage(collection, "create/update", entryData.Name))
 	if err != nil {
 		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
+	// if ext == ".md" || ext == ".mdx" {
+	// 	contentData, err = cms.JsonToMarkdown(contentData)
+	// 	if err != nil {
+	// 		errCmsParseMarkdown().Log(r, err).Json(w)
+	// 		return
+	// 	}
+	// }
 
-	if entryData.SaveSchema {
-		schema, err := cms.GenerateSchema(entryData.Name, entryData.Contents)
-		if err != nil {
-			errCmsSchemaGeneration().Log(r, err).Json(w)
-			return
-		}
-		schemaPath := filepath.Join(cmsConfig.WorkDir, collection, content.JsonSchemaName)
-		schemaCommitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, content.JsonSchemaName)
-		resp, err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, schemaPath, &schema, schemaCommitMessage)
-		if err != nil {
-			errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
-			return
-		}
-	}
+	// TODO: Uncomment to save to GH
+	// resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &contentData, commitMessage)
+	// if err != nil {
+	// 	errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+	// 	return
+	// }
+
+	// if entryData.SaveSchema {
+	// 	schema, err := cms.GenerateSchema(entryData.Name, entryData.Contents)
+	// 	if err != nil {
+	// 		errCmsSchemaGeneration().Log(r, err).Json(w)
+	// 		return
+	// 	}
+	// 	schemaPath := filepath.Join(cmsConfig.WorkDir, collection, content.JsonSchemaName)
+	// 	schemaCommitMessage := fmt.Sprintf("feat(%s): create/update %s", collection, content.JsonSchemaName)
+	// 	resp, err = gh.CommitBlob(ctx, accessToken, owner, repo, ref, schemaPath, &schema, schemaCommitMessage)
+	// 	if err != nil {
+	// 		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+	// 		return
+	// 	}
+	// }
 
 	w.WriteHeader(http.StatusOK)
 }
@@ -418,37 +441,33 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 	entry := chi.URLParam(r, "entry")
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.WorkDir, collection, entry)
-
-	fc, resp, err := gh.GetFileContent(ctx, accessToken, owner, repo, ref, path)
+	schemaPath := filepath.Join(cmsConfig.WorkDir, collection, content.JsonSchemaName)
+	sc, resp, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, schemaPath)
 	if err != nil {
 		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
-	blob, err := fc.GetContent()
+	cs := &content.Schema{}
+	err = json.Unmarshal(sc, &cs)
+	if err != nil {
+		errCmsParseSchema().Status(resp.StatusCode).Log(r, err).Json(w)
+		return
+	}
+
+	// Get files in directory
+	path := filepath.Join(cmsConfig.WorkDir, collection)
+	rc, resp, err := gh.GetAllLocaleContents(ctx, accessToken, owner, repo, ref, path, entry)
 	if err != nil {
 		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
-		return
 	}
 
-	blobType := filepath.Ext(*fc.Name)
-	mc, err := cms.ParseBlob(blobType, blob)
+	mc, err := cms.MergeLocalisedContent(rc, *cs)
 	if err != nil {
-		errCmsParseBlob().Status(http.StatusInternalServerError).Log(r, err).Json(w)
+		errCmsMergeLocalizedContent().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
-	p := filepath.Join(cmsConfig.WorkDir, collection, content.JsonSchemaName)
-	s, _, _ := gh.GetBlob(ctx, accessToken, owner, repo, ref, p)
-
-	cs := content.Schema{}
-	err = json.Unmarshal(s, &cs)
-	if err != nil {
-		errCmsParseSchema().Status(http.StatusInternalServerError).Log(r, err).Json(w)
-		return
-	}
-
-	data := &entryItem{Name: *fc.Name, Type: blobType, Content: mc, Schema: cs}
+	data := &entryItem{Name: mc.Name, Type: mc.Type, Content: mc, Schema: *cs}
 	jsonResponse(w, http.StatusOK, data)
 }
 
@@ -476,9 +495,8 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 	path := filepath.Join(cmsConfig.WorkDir, collection, entry)
-	commitMessage := fmt.Sprintf("delete(%s): %s", collection, entry)
 
-	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, nil, commitMessage)
+	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, nil, commitMessage(collection, "delete", entry))
 	if err != nil {
 		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
@@ -545,7 +563,6 @@ func postImage(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
 	path := filepath.Join(cmsConfig.WorkDir, cms.ImagesFolder, fileName)
-	commitMessage := fmt.Sprintf("feat(images): upload %s", fileName)
 	encoding := "base64"
 	content := base64.StdEncoding.EncodeToString(imgbytes)
 
@@ -558,7 +575,7 @@ func postImage(w http.ResponseWriter, r *http.Request) {
 		{
 			Path: path,
 			SHA:  blob.SHA,
-		}}, commitMessage)
+		}}, commitMessage("images", "upload", fileName))
 	if err != nil {
 		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return

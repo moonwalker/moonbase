@@ -39,17 +39,19 @@ var (
 	errReposDeleteBlob  = errf(400, "err_repos_006", "failed to delete blob")
 	errReposCreateBlob  = errf(400, "err_repos_007", "failed to create blob")
 	// cms
-	errCmsGetCommits       = errf(404, "err_cms_001", "failed to get commits")
-	errCmsDeleteFolder     = errf(400, "err_cms_002", "failed to delete folder")
-	errCmsSchemaValidation = errf(400, "err_cms_003", "schema validation failed")
-	errCmsSchemaGeneration = errf(400, "err_cms_004", "schema generation failed")
-	errCmsGetComponents    = errf(404, "err_cms_005", "failed to get components")
-	errCmsParseBlob        = errf(400, "err_cms_006", "failed to parse blob")
-	errCmsParseSchema      = errf(400, "err_cms_006", "failed to parse entry schema")
-	errCmsParseMarkdown    = errf(400, "err_cms_007", "failed to parse markdown")
-	errCmsGetFormReader    = errf(400, "err_cms_008", "failed to get multipart reader")
-	errCmsReadForm         = errf(400, "err_cms_009", "failed to read next part")
-	errCmsReadContent      = errf(400, "err_cms_010", "failed to read content")
+	errCmsGetCommits               = errf(404, "err_cms_001", "failed to get commits")
+	errCmsDeleteFolder             = errf(400, "err_cms_002", "failed to delete folder")
+	errCmsSchemaValidation         = errf(400, "err_cms_003", "schema validation failed")
+	errCmsSchemaGeneration         = errf(400, "err_cms_004", "schema generation failed")
+	errCmsGetComponents            = errf(404, "err_cms_005", "failed to get components")
+	errCmsParseBlob                = errf(400, "err_cms_006", "failed to parse blob")
+	errCmsParseSchema              = errf(400, "err_cms_006", "failed to parse entry schema")
+	errCmsParseMarkdown            = errf(400, "err_cms_007", "failed to parse markdown")
+	errCmsGetFormReader            = errf(400, "err_cms_008", "failed to get multipart reader")
+	errCmsReadForm                 = errf(400, "err_cms_009", "failed to read next part")
+	errCmsReadContent              = errf(400, "err_cms_010", "failed to read content")
+	errCmsMergeLocalizedContent    = errf(400, "err_cms_011", "failed to merge localized content")
+	errCmsSeparateLocalizedContent = errf(400, "err_cms_011", "failed to separate localized content")
 )
 
 type errorData struct {
@@ -70,9 +72,7 @@ func errf(statusCode int, code, message string) func() *errorData {
 }
 
 func (e *errorData) Details(a ...string) *errorData {
-	for _, arg := range a {
-		e.Detailed = append(e.Detailed, arg)
-	}
+	e.Detailed = append(e.Detailed, a...)
 	return e
 }
 

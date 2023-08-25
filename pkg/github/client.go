@@ -44,7 +44,7 @@ func AuthCodeURL(state string) string {
 }
 
 func Exchange(code string) (string, error) {
-	t, err := ghConfig().Exchange(oauth2.NoContext, code)
+	t, err := ghConfig().Exchange(context.Background(), code)
 	if err != nil {
 		return "", err
 	}
@@ -604,7 +604,6 @@ func GetFilesContent(ctx context.Context, accessToken string, owner string, repo
 		}
 		rc.Content = &c
 		rcs = append(rcs, rc)
-		resp = resp
 	}
 
 	return rcs, resp, nil

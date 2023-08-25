@@ -141,6 +141,9 @@ func encodeState(r *http.Request) (string, error) {
 
 	if !u.IsAbs() {
 		u, err = url.Parse(r.Referer())
+		if err != nil {
+			return "", err
+		}
 		u.Path = returnURL
 	}
 
