@@ -560,9 +560,7 @@ func postImage(w http.ResponseWriter, r *http.Request) {
 	}
 	imgbytes = bytes.Trim(imgbytes, "\xef\xbb\xbf")
 
-	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-
-	path := filepath.Join(cmsConfig.WorkDir, cms.ImagesFolder, fileName)
+	path := filepath.Join(cms.ImagesFolder, fileName)
 	encoding := "base64"
 	content := base64.StdEncoding.EncodeToString(imgbytes)
 
