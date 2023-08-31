@@ -66,6 +66,9 @@ func Routes() chi.Router {
 
 			r.Get("/cms/{owner}/{repo}/{ref}/settings", getSettings)
 			r.Get("/cms/{owner}/{repo}/{ref}/settings/{setting}", getSetting)
+
+			r.Get("/cms/{owner}/{repo}/{ref}/reference/{collection}/{id}/{locale}", getReference)
+
 		})
 	})
 

@@ -42,16 +42,17 @@ type commitEntry struct {
 type ComponentsTree map[string]string
 type ComponentsTreeSha string
 
-type entryItem struct {
+type localizedEntry struct {
 	Name    string                     `json:"name"`
 	Type    string                     `json:"type"`
 	Content *content.MergedContentData `json:"content"`
 	Schema  content.Schema             `json:"schema,omitempty"`
 }
 
-type settingItem struct {
-	Name    string                 `json:"name"`
-	Content map[string]interface{} `json:"content"`
+type entryItem struct {
+	Name    string               `json:"name"`
+	Content *content.ContentData `json:"content"`
+	Schema  content.Schema       `json:"schema,omitempty"`
 }
 
 var (
@@ -467,7 +468,7 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := &entryItem{Name: mc.Name, Type: mc.Type, Content: mc, Schema: *cs}
+	data := &localizedEntry{Name: mc.Name, Type: mc.Type, Content: mc, Schema: *cs}
 	jsonResponse(w, http.StatusOK, data)
 }
 
@@ -659,13 +660,78 @@ func getSetting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	blobType := filepath.Ext(*fc.Name)
-	mc, err := cms.ParseBlob(blobType, blob)
+	contentData := &content.ContentData{}
+	err = json.Unmarshal([]byte(blob), contentData)
 	if err != nil {
 		errCmsParseBlob().Status(http.StatusInternalServerError).Log(r, err).Json(w)
 		return
 	}
 
-	data := &settingItem{Name: *fc.Name, Content: mc}
+	data := &entryItem{Name: *fc.Name, Content: contentData}
+	jsonResponse(w, http.StatusOK, data)
+}
+
+// @Summary		Get reference
+// @Tags		cms
+// @Accept		json
+// @Produce		json
+// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
+// @Param		collection		path	string	true	"collection"
+// @Param		id				path	string	true	"id"
+// @Param		id				path	string	true	"locale"
+// @Success		200	{object}	map[string]interface{}
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}/reference/{collection}/{id}/{locale}	[get]
+// @Security	bearerToken
+func getReference(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	accessToken := accessTokenFromContext(ctx)
+
+	owner := chi.URLParam(r, "owner")
+	repo := chi.URLParam(r, "repo")
+	ref := chi.URLParam(r, "ref")
+	collection := chi.URLParam(r, "collection")
+	id := chi.URLParam(r, "id")
+	locale := chi.URLParam(r, "locale")
+
+	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
+	schemaPath := filepath.Join(cmsConfig.WorkDir, collection, content.JsonSchemaName)
+	sc, resp, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, schemaPath)
+	if err != nil {
+		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+		return
+	}
+	cs := &content.Schema{}
+	err = json.Unmarshal(sc, &cs)
+	if err != nil {
+		errCmsParseSchema().Status(resp.StatusCode).Log(r, err).Json(w)
+		return
+	}
+
+	data := &entryItem{Schema: *cs}
+
+	// Get files in directory
+	path := filepath.Join(cmsConfig.WorkDir, collection)
+	rc, resp, err := gh.SearchContentsByID(ctx, accessToken, owner, repo, ref, path, id)
+	if err != nil {
+		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+	}
+
+	for _, c := range rc {
+		fn, l := cms.GetNameLocaleFromFilename(*c.Name)
+		if l == locale {
+			data.Name = fn
+			contentData := &content.ContentData{}
+			err = json.Unmarshal([]byte(*c.Content), contentData)
+			if err != nil {
+				errCmsParseBlob().Status(http.StatusInternalServerError).Log(r, err).Json(w)
+				return
+			}
+			data.Content = contentData
+		}
+	}
+
 	jsonResponse(w, http.StatusOK, data)
 }

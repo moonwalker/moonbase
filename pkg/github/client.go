@@ -623,6 +623,37 @@ func GetFilesContent(ctx context.Context, accessToken string, owner string, repo
 	return rcs, resp, nil
 }
 
+func SearchContentsByID(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, id string) ([]*github.RepositoryContent, *github.Response, error) {
+	githubClient := ghClient(ctx, accessToken)
+
+	_, rc, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
+		Ref: ref,
+	})
+	if err != nil {
+		return nil, resp, err
+	}
+
+	rcs := make([]*github.RepositoryContent, 0)
+	for _, c := range rc {
+		if *c.Type == "file" && *c.Name != content.JsonSchemaName {
+			b, err := downloadFile(*c.DownloadURL)
+			if err != nil {
+				return nil, resp, err
+			}
+			content := string(b)
+			if strings.Contains(content, "Not found") {
+				log.Fatal("couldn't download file")
+			}
+			if strings.HasPrefix(content, fmt.Sprintf(`{"id":"%s",`, id)) {
+				c.Content = &content
+				rcs = append(rcs, c)
+			}
+		}
+	}
+
+	return rcs, resp, nil
+}
+
 func downloadFile(downloadURL string) ([]byte, error) {
 	resp, err := http.Get(downloadURL)
 	if err != nil {
