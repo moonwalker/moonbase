@@ -17,11 +17,10 @@ type localePayloads struct {
 	Contents string `json:"contents"`
 }
 
-func GetNameLocaleFromFilename(fn string) (string, string) {
-	ui := strings.LastIndex(fn, "_")
-	di := strings.LastIndex(fn, ".")
-	name := fn[:ui]
-	locale := fn[ui+1 : di]
+func GetNameLocaleFromPath(path string) (string, string) {
+	dirs := strings.Split(filepath.Dir(path), "/")
+	name := dirs[len(dirs)-1]
+	locale := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 
 	return name, locale
 }
@@ -42,7 +41,7 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 	// Get default locale content
 	for _, c := range rc {
 		if *c.Name != content.JsonSchemaName {
-			n, l := GetNameLocaleFromFilename(*c.Name)
+			n, l := GetNameLocaleFromPath(*c.Path)
 
 			cnt, err := c.GetContent()
 			if err != nil {
@@ -62,12 +61,12 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 				result.Version = dcd.Version
 
 				if dcd.CreatedAt != "" {
-					ct, _ := time.Parse(time.RFC3339, dcd.CreatedAt)
+					ct, _ := time.Parse(time.RFC3339Nano, dcd.CreatedAt)
 					result.CreatedAt = &ct
 				}
 				result.CreatedBy = dcd.CreatedBy
 				if dcd.UpdatedAt != "" {
-					ut, _ := time.Parse(time.RFC3339, dcd.UpdatedAt)
+					ut, _ := time.Parse(time.RFC3339Nano, dcd.UpdatedAt)
 					result.UpdatedAt = &ut
 				}
 				result.UpdatedBy = dcd.UpdatedBy
@@ -104,7 +103,7 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 
 func SeparateLocalisedContent(user string, mcd content.MergedContentData, locales []string, workDir, collection string) ([]gh.BlobEntry, error) {
 	var res []gh.BlobEntry
-	now := time.Now().UTC().Format(time.RFC3339)
+	now := time.Now().UTC().Format(time.RFC3339Nano)
 
 	for _, l := range locales {
 		fields := make(map[string]interface{})
@@ -121,7 +120,7 @@ func SeparateLocalisedContent(user string, mcd content.MergedContentData, locale
 
 		s, err := json.Marshal(content.ContentData{
 			ID:        mcd.ID,
-			CreatedAt: mcd.CreatedAt.Format(time.RFC3339),
+			CreatedAt: mcd.CreatedAt.Format(time.RFC3339Nano),
 			CreatedBy: mcd.CreatedBy,
 			UpdatedAt: now,
 			UpdatedBy: user,
@@ -133,7 +132,7 @@ func SeparateLocalisedContent(user string, mcd content.MergedContentData, locale
 
 		content := string(s)
 		res = append(res, gh.BlobEntry{
-			Path:    filepath.Join(workDir, collection, fmt.Sprintf("%s_%s.json", mcd.Name, l)),
+			Path:    filepath.Join(workDir, collection, mcd.Name, fmt.Sprintf("%s.json", l)),
 			Content: &content,
 		})
 	}

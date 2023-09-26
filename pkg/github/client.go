@@ -539,7 +539,7 @@ func GetContentsRecursive(ctx context.Context, accessToken string, owner string,
 	return rcs, resp, nil
 }
 
-func GetAllLocaleContents(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, prefix string) ([]*github.RepositoryContent, *github.Response, error) {
+func GetAllLocaleContents(ctx context.Context, accessToken string, owner string, repo string, ref string, path string) ([]*github.RepositoryContent, *github.Response, error) {
 	githubClient := ghClient(ctx, accessToken)
 
 	_, rc, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
@@ -551,7 +551,7 @@ func GetAllLocaleContents(ctx context.Context, accessToken string, owner string,
 
 	rcs := make([]*github.RepositoryContent, 0)
 	for _, c := range rc {
-		if *c.Type == "file" && (strings.HasPrefix(*c.Name, prefix) || *c.Name == content.JsonSchemaName) {
+		if *c.Type == "file" && (*c.Name == content.JsonSchemaName || filepath.Ext(*c.Name) == ".json") {
 			b, err := downloadFile(*c.DownloadURL)
 			if err != nil {
 				return nil, resp, err

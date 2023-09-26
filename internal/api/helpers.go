@@ -8,8 +8,8 @@ import (
 	gh "github.com/moonwalker/moonbase/pkg/github"
 )
 
-func getLocales(ctx context.Context, accessToken, owner, repo, branch, path, entry string) ([]string, int, error) {
-	rcs, resp, err := gh.GetAllLocaleContents(ctx, accessToken, owner, repo, branch, path, entry)
+func getLocales(ctx context.Context, accessToken, owner, repo, branch, path string) ([]string, int, error) {
+	rcs, resp, err := gh.GetAllLocaleContents(ctx, accessToken, owner, repo, branch, path)
 	if err != nil {
 		return nil, resp.StatusCode, err
 	}
@@ -17,7 +17,7 @@ func getLocales(ctx context.Context, accessToken, owner, repo, branch, path, ent
 	res := make([]string, 0)
 	for _, rc := range rcs {
 		if *rc.Type == "file" && *rc.Name != content.JsonSchemaName {
-			fn, l := cms.GetNameLocaleFromFilename(*rc.Name)
+			fn, l := cms.GetNameLocaleFromPath(*rc.Path)
 			if fn != "" {
 				res = append(res, l)
 			}

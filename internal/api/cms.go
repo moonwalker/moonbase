@@ -274,16 +274,13 @@ func getEntries(w http.ResponseWriter, r *http.Request) {
 
 	treeItems := make([]*treeItem, 0)
 	for _, rc := range repoContents {
-		if *rc.Type == "file" {
-			fn, l := cms.GetNameLocaleFromFilename(*rc.Name)
-			if fn != "" && l == content.DefaultLocale {
-				treeItems = append(treeItems, &treeItem{
-					Name: &fn,
-					Path: rc.Path,
-					Type: rc.Type,
-					SHA:  rc.SHA,
-				})
-			}
+		if *rc.Type == "dir" {
+			treeItems = append(treeItems, &treeItem{
+				Name: rc.Name,
+				Path: rc.Path,
+				Type: rc.Type,
+				SHA:  rc.SHA,
+			})
 		}
 	}
 	jsonResponse(w, http.StatusOK, treeItems)
@@ -348,7 +345,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.WorkDir, collection)
+	path := filepath.Join(cmsConfig.WorkDir, collection, entry)
 
 	// if !entryData.SaveSchema {
 	// 	schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.WorkDir)
@@ -368,7 +365,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locales, statusCode, err := getLocales(ctx, accessToken, owner, repo, ref, path, entry)
+	locales, statusCode, err := getLocales(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
 		errReposGetTree().Status(statusCode).Log(r, err).Json(w)
 		return
@@ -456,8 +453,8 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get files in directory
-	path := filepath.Join(cmsConfig.WorkDir, collection)
-	rc, resp, err := gh.GetAllLocaleContents(ctx, accessToken, owner, repo, ref, path, entry)
+	path := filepath.Join(cmsConfig.WorkDir, collection, entry)
+	rc, resp, err := gh.GetAllLocaleContents(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
 		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 	}
@@ -720,7 +717,7 @@ func getReference(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, c := range rc {
-		fn, l := cms.GetNameLocaleFromFilename(*c.Name)
+		fn, l := cms.GetNameLocaleFromPath(*c.Path)
 		if l == locale {
 			data.Name = fn
 			contentData := &content.ContentData{}
