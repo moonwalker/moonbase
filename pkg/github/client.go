@@ -527,13 +527,14 @@ func GetContentsRecursive(ctx context.Context, accessToken string, owner string,
 			c.Content = &content
 			rcs = append(rcs, c)
 		}
-		if *c.Type == "dir" {
+		// not needed with the new content structure
+		/*if *c.Type == "dir" {
 			rcr, _, err := GetContentsRecursive(ctx, accessToken, owner, repo, ref, *c.Path)
 			if err != nil {
 				return nil, resp, err
 			}
 			rcs = append(rcs, rcr...)
-		}
+		}*/
 	}
 
 	return rcs, resp, nil
