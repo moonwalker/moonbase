@@ -72,7 +72,11 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 				result.UpdatedBy = dcd.UpdatedBy
 			}
 
-			for k, v := range dcd.Fields {
+			//for k, v := range dcd.Fields {
+			for _, csf := range cs.Fields {
+				k := csf.ID
+				v := dcd.Fields[k]
+
 				if result.Fields[k] == nil {
 					result.Fields[k] = make(map[string]interface{})
 				}
