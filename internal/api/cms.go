@@ -716,28 +716,26 @@ func getReference(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := &entryItem{Schema: *cs}
-
 	// Get files in directory
 	path := filepath.Join(cmsConfig.WorkDir, collection)
-	rc, resp, err := gh.SearchContentsByID(ctx, accessToken, owner, repo, ref, path, id)
+	rc, resp, err := gh.SearchByID(ctx, accessToken, owner, repo, ref, path, id, locale)
 	if err != nil {
 		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+		return
 	}
 
-	for _, c := range rc {
-		fn, l := cms.GetNameLocaleFromPath(*c.Path)
-		if l == locale {
-			data.Name = fn
-			contentData := &content.ContentData{}
-			err = json.Unmarshal([]byte(*c.Content), contentData)
-			if err != nil {
-				errCmsParseBlob().Status(http.StatusInternalServerError).Log(r, err).Json(w)
-				return
-			}
-			data.Content = contentData
-		}
+	blob, err := rc.GetContent()
+	if err != nil {
+		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+		return
 	}
 
-	jsonResponse(w, http.StatusOK, data)
+	contentData := content.ContentData{}
+	err = json.Unmarshal([]byte(blob), &contentData)
+	if err != nil {
+		errCmsParseBlob().Status(http.StatusInternalServerError).Log(r, err).Json(w)
+		return
+	}
+
+	jsonResponse(w, http.StatusOK, &entryItem{Schema: *cs, Content: &contentData})
 }

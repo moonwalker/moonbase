@@ -629,15 +629,13 @@ func GetFilesContent(ctx context.Context, accessToken string, owner string, repo
 }
 
 // "https://api.github.com/search/code?q=1LH4vkAWCVPt56aKmJZIxW+in:file+filename:en.json+path:_content/currency+repo:moonwalker/cms-instaslots"
-func SearchByID(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, id string) (*github.RepositoryContent, *github.Response, error) {
+func SearchByID(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, id string, locale string) (*github.RepositoryContent, *github.Response, error) {
 	githubClient := ghClient(ctx, accessToken)
-
-	query := fmt.Sprintf("q=%s+in:file+filename:en.json+path:%s+repo:%s/%s", id, path, owner, repo)
+	query := fmt.Sprintf("q=%s+in:file+filename:%s.json+path:%s+repo:%s/%s", id, locale, path, owner, repo)
 	sr, resp, err := githubClient.Search.Code(ctx, query, &github.SearchOptions{})
 	if err != nil {
 		return nil, resp, err
 	}
-
 	if len(sr.CodeResults) == 1 {
 		filepath := sr.CodeResults[0].GetPath()
 		rc, _, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, filepath, &github.RepositoryContentGetOptions{})
