@@ -55,6 +55,16 @@ type entryItem struct {
 	Schema  content.Schema       `json:"schema,omitempty"`
 }
 
+type settingItem struct {
+	Label  string   `json:"label"`
+	Models []string `json:"models"`
+}
+
+type settings struct {
+	Name    string                  `json:"name"`
+	Content map[string]*settingItem `json:"content"`
+}
+
 var (
 	shaCache = cache.NewGeneric[ComponentsTreeSha](30 * time.Minute)
 )
@@ -657,14 +667,13 @@ func getSetting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contentData := &content.ContentData{}
-	err = json.Unmarshal([]byte(blob), contentData)
+	contentData := make(map[string]*settingItem)
+	err = json.Unmarshal([]byte(blob), &contentData)
 	if err != nil {
 		errCmsParseBlob().Status(http.StatusInternalServerError).Log(r, err).Json(w)
 		return
 	}
-
-	data := &entryItem{Name: *fc.Name, Content: contentData}
+	data := &settings{Name: *fc.Name, Content: contentData}
 	jsonResponse(w, http.StatusOK, data)
 }
 
