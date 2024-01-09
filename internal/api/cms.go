@@ -507,11 +507,11 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 
 // @Summary		Upload image
 // @Tags		cms
-// @Accept		file:image/*
-// @Param		owner			path	string		true	"the account owner of the repository (the name is not case sensitive)"
-// @Param		repo			path	string		true	"the name of the repository (the name is not case sensitive)"
-// @Param		ref				path	string		true	"git ref (branch, tag, sha)"
-// @Param		payload	body	image	file		true	"uploaded image"
+// @Accept		multipart/form-data
+// @Param		owner			path		string		true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path		string		true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path		string		true	"git ref (branch, tag, sha)"
+// @Param		payload			formData	file		true	"uploaded image"
 // @Success		200
 // @Failure		500	{object}	errorData
 // @Router		/cms/{owner}/{repo}/{ref}/images	[post]

@@ -584,6 +584,264 @@ const docTemplate = `{
                 }
             }
         },
+        "/cms/{owner}/{repo}/{ref}/images": {
+            "post": {
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "cms"
+                ],
+                "summary": "Upload image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the account owner of the repository (the name is not case sensitive)",
+                        "name": "owner",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the name of the repository (the name is not case sensitive)",
+                        "name": "repo",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "git ref (branch, tag, sha)",
+                        "name": "ref",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "uploaded image",
+                        "name": "payload",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorData"
+                        }
+                    }
+                }
+            }
+        },
+        "/cms/{owner}/{repo}/{ref}/reference/{collection}/{id}/{locale}": {
+            "get": {
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cms"
+                ],
+                "summary": "Get reference",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the account owner of the repository (the name is not case sensitive)",
+                        "name": "owner",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the name of the repository (the name is not case sensitive)",
+                        "name": "repo",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "git ref (branch, tag, sha)",
+                        "name": "ref",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "collection",
+                        "name": "collection",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "locale",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorData"
+                        }
+                    }
+                }
+            }
+        },
+        "/cms/{owner}/{repo}/{ref}/settings": {
+            "get": {
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cms"
+                ],
+                "summary": "Get settings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the account owner of the repository (the name is not case sensitive)",
+                        "name": "owner",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the name of the repository (the name is not case sensitive)",
+                        "name": "repo",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "git ref (branch, tag, sha)",
+                        "name": "ref",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.treeItem"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorData"
+                        }
+                    }
+                }
+            }
+        },
+        "/cms/{owner}/{repo}/{ref}/settings/{setting}": {
+            "get": {
+                "security": [
+                    {
+                        "bearerToken": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cms"
+                ],
+                "summary": "Get setting",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "the account owner of the repository (the name is not case sensitive)",
+                        "name": "owner",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the name of the repository (the name is not case sensitive)",
+                        "name": "repo",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "git ref (branch, tag, sha)",
+                        "name": "ref",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "setting",
+                        "name": "setting",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.errorData"
+                        }
+                    }
+                }
+            }
+        },
         "/repos": {
             "get": {
                 "security": [
@@ -1018,6 +1276,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "contents": {
+                    "type": "string"
+                },
+                "login": {
                     "type": "string"
                 },
                 "name": {
