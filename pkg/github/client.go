@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -631,7 +632,11 @@ func GetFilesContent(ctx context.Context, accessToken string, owner string, repo
 // "https://api.github.com/search/code?q=1LH4vkAWCVPt56aKmJZIxW+in:file+filename:en.json+path:_content/currency+repo:moonwalker/cms-instaslots"
 func SearchByID(ctx context.Context, accessToken string, owner string, repo string, ref string, path string, id string, locale string) (*github.RepositoryContent, *github.Response, error) {
 	githubClient := ghClient(ctx, accessToken)
-	query := fmt.Sprintf("q=%s+in:file+filename:%s.json+path:%s+repo:%s/%s", id, locale, path, owner, repo)
+	q := fmt.Sprintf("%s+in:file+filename:%s.json+path:%s+repo:%s/%s", id, locale, path, owner, repo)
+	query, err := url.QueryUnescape(q)
+	if err != nil {
+		return nil, nil, err
+	}
 	sr, resp, err := githubClient.Search.Code(ctx, query, &github.SearchOptions{})
 	if err != nil {
 		return nil, resp, err
