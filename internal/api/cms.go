@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -352,6 +353,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	if len(entryData.Name) == 0 {
 		m := "missing entry name"
 		errReposCommitBlob().Details(m).Log(r, errors.New(m)).Json(w)
+		return
 	}
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
@@ -462,17 +464,35 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get files in directory
-	path := filepath.Join(cmsConfig.WorkDir, collection, entry)
-	rc, resp, err := gh.GetAllLocaleContents(ctx, accessToken, owner, repo, ref, path)
-	if err != nil {
-		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
-	}
+	var mc *content.MergedContentData
 
-	mc, err := cms.MergeLocalisedContent(rc, *cs)
-	if err != nil {
-		errCmsMergeLocalizedContent().Status(resp.StatusCode).Log(r, err).Json(w)
-		return
+	if entry != "_new" {
+		// Get files in directory
+		path := filepath.Join(cmsConfig.WorkDir, collection, entry)
+		rc, resp, err := gh.GetAllLocaleContents(ctx, accessToken, owner, repo, ref, path)
+		if err != nil {
+			errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+			return
+		}
+
+		mc, err = cms.MergeLocalisedContent(rc, *cs)
+		if err != nil {
+			errCmsMergeLocalizedContent().Log(r, err).Json(w)
+			return
+		}
+	} else {
+		// get product files that has to exist -- HACK !!!
+		path := filepath.Join(cmsConfig.WorkDir, "product", strings.TrimPrefix(repo, "cms-"))
+		locales, statusCode, err := getLocales(ctx, accessToken, owner, repo, ref, path)
+		if err != nil {
+			errReposGetTree().Status(statusCode).Log(r, err).Json(w)
+			return
+		}
+		mc, err = cms.GetEmptyLocalisedContent(*cs, locales)
+		if err != nil {
+			errCmsMergeLocalizedContent().Log(r, err).Json(w)
+			return
+		}
 	}
 
 	data := &localizedEntry{Name: mc.Name, Type: mc.Type, Content: mc, Schema: *cs}

@@ -17,6 +17,17 @@ type localePayloads struct {
 	Contents string `json:"contents"`
 }
 
+func getLocalizedFields(cs content.Schema) map[string]bool {
+	localizedFields := make(map[string]bool)
+	//Build Localized field bool from schema
+	for _, csf := range cs.Fields {
+		if csf.Localized {
+			localizedFields[csf.ID] = csf.Localized
+		}
+	}
+	return localizedFields
+}
+
 func GetNameLocaleFromPath(path string) (string, string) {
 	dirs := strings.Split(filepath.Dir(path), "/")
 	name := dirs[len(dirs)-1]
@@ -29,14 +40,7 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 	result := &content.MergedContentData{}
 	result.Fields = make(map[string]map[string]interface{})
 
-	localizedFields := make(map[string]bool)
-
-	//Build Localized field bool from schema
-	for _, csf := range cs.Fields {
-		if csf.Localized {
-			localizedFields[csf.ID] = csf.Localized
-		}
-	}
+	localizedFields := getLocalizedFields(cs)
 
 	// Get default locale content
 	for _, c := range rc {
@@ -142,4 +146,28 @@ func SeparateLocalisedContent(user string, mcd content.MergedContentData, locale
 	}
 
 	return res, nil
+}
+
+func GetEmptyLocalisedContent(cs content.Schema, locales []string) (*content.MergedContentData, error) {
+	result := &content.MergedContentData{}
+	result.Fields = make(map[string]map[string]interface{})
+
+	localizedFields := getLocalizedFields(cs)
+
+	for _, csf := range cs.Fields {
+		k := csf.ID
+
+		if result.Fields[k] == nil {
+			result.Fields[k] = make(map[string]interface{})
+		}
+		result.Fields[k][content.DefaultLocale] = nil
+
+		if localizedFields[k] {
+			for _, l := range locales {
+				result.Fields[k][l] = nil
+			}
+		}
+	}
+
+	return result, nil
 }
