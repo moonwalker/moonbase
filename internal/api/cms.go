@@ -356,9 +356,9 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
-	path := filepath.Join(cmsConfig.WorkDir, collection, entry)
+	entryData.Name = strings.ToLower(entryData.Name)
 
+	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 	// if !entryData.SaveSchema {
 	// 	schema := getSchema(ctx, accessToken, owner, repo, ref, collection, cmsConfig.WorkDir)
 	// 	if schema.Available() {
@@ -377,7 +377,15 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locales, statusCode, err := getLocales(ctx, accessToken, owner, repo, ref, path)
+	if len(contentData.Name) == 0 {
+		now := time.Now().UTC()
+		contentData.Name = entryData.Name
+		contentData.ID = entryData.Name
+		contentData.CreatedAt = &now
+		contentData.CreatedBy = entryData.Login
+	}
+
+	locales, statusCode, err := getLocales(ctx, accessToken, owner, repo, ref)
 	if err != nil {
 		errReposGetTree().Status(statusCode).Log(r, err).Json(w)
 		return
@@ -481,9 +489,7 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		// get product files that has to exist -- HACK !!!
-		path := filepath.Join(cmsConfig.WorkDir, "product", strings.TrimPrefix(repo, "cms-"))
-		locales, statusCode, err := getLocales(ctx, accessToken, owner, repo, ref, path)
+		locales, statusCode, err := getLocales(ctx, accessToken, owner, repo, ref)
 		if err != nil {
 			errReposGetTree().Status(statusCode).Log(r, err).Json(w)
 			return
@@ -675,8 +681,7 @@ func getSetting(w http.ResponseWriter, r *http.Request) {
 	setting := chi.URLParam(r, "setting")
 
 	path := filepath.Join(cms.SettingsFolder, setting)
-
-	fc, resp, err := gh.GetFileContent(ctx, accessToken, owner, repo, ref, path)
+	fc, resp, err := gh.GetFileContent(ctx, accessToken, owner, repo, ref, path+".json")
 	if err != nil {
 		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
