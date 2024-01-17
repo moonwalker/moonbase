@@ -742,7 +742,7 @@ func getReference(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get files in directory
-	path := strings.ToLower(filepath.Join(cmsConfig.WorkDir, collection, id, locale+".json"))
+	path := filepath.Join(cmsConfig.WorkDir, collection, id, locale+".json")
 	rc, resp, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
 		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
