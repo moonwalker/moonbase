@@ -742,21 +742,15 @@ func getReference(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get files in directory
-	path := filepath.Join(cmsConfig.WorkDir, collection)
-	rc, resp, err := gh.SearchByID(ctx, accessToken, owner, repo, ref, path, id, locale)
-	if err != nil {
-		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
-		return
-	}
-
-	blob, err := rc.GetContent()
+	path := strings.ToLower(filepath.Join(cmsConfig.WorkDir, collection, id, locale+".json"))
+	rc, resp, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
 		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
 	}
 
 	contentData := content.ContentData{}
-	err = json.Unmarshal([]byte(blob), &contentData)
+	err = json.Unmarshal(rc, &contentData)
 	if err != nil {
 		errCmsParseBlob().Status(http.StatusInternalServerError).Log(r, err).Json(w)
 		return
