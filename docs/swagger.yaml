@@ -549,7 +549,7 @@ paths:
         type: string
       - description: locale
         in: path
-        name: id
+        name: locale
         required: true
         type: string
       produces:
