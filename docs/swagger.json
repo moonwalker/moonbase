@@ -688,7 +688,7 @@
                     {
                         "type": "string",
                         "description": "locale",
-                        "name": "id",
+                        "name": "locale",
                         "in": "path",
                         "required": true
                     }
