@@ -529,8 +529,7 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 	path := filepath.Join(cmsConfig.WorkDir, collection, entry)
-
-	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, nil, commitMessage(collection, "delete", entry))
+	resp, err := gh.DeleteFolder(ctx, accessToken, owner, repo, ref, path, commitMessage(collection, "delete", entry))
 	if err != nil {
 		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
 		return
