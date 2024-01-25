@@ -13,6 +13,9 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/gosimple/slug"
 
@@ -24,7 +27,8 @@ import (
 )
 
 type collectionPayload struct {
-	Name string `json:"name"`
+	Login string `json:"login"`
+	Name  string `json:"name"`
 }
 
 type entryPayload struct {
@@ -200,8 +204,9 @@ func postCollection(w http.ResponseWriter, r *http.Request) {
 	cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
 
 	collectionName := slug.Make(collection.Name)
-	path := filepath.Join(cmsConfig.WorkDir, collectionName, ".gitkeep")
-	emptyContent := ""
+	path := filepath.Join(cmsConfig.WorkDir, collectionName, content.JsonSchemaName)
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	emptyContent := fmt.Sprintf(`{"id":"%s","name":"%s","displayField":"","fields":[],"createdAt":"%s","createdBy":"%s","updatedAt":"%s","updatedBy":"%s","version":0}`, collection.Name, cases.Title(language.Und, cases.NoLower).String(collection.Name), now, collection.Login, now, collection.Login)
 
 	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &emptyContent, commitMessage("content", "create", collectionName))
 	if err != nil {
