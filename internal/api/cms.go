@@ -710,7 +710,7 @@ func getSetting(w http.ResponseWriter, r *http.Request) {
 // @Param		ref				path	string	true	"git ref (branch, tag, sha)"
 // @Param		collection		path	string	true	"collection"
 // @Param		id				path	string	true	"id"
-// @Param		id				path	string	true	"locale"
+// @Param		locale			path	string	true	"locale"
 // @Success		200	{object}	map[string]interface{}
 // @Failure		500	{object}	errorData
 // @Router		/cms/{owner}/{repo}/{ref}/reference/{collection}/{id}/{locale}	[get]
