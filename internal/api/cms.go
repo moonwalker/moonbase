@@ -60,14 +60,39 @@ type entryItem struct {
 	Schema  content.Schema       `json:"schema,omitempty"`
 }
 
-type settingItem struct {
+type collectionGroup struct {
 	Label  string   `json:"label"`
 	Models []string `json:"models"`
 }
 
-type settings struct {
-	Name    string                  `json:"name"`
-	Content map[string]*settingItem `json:"content"`
+type entryResponse struct {
+}
+
+type queryParams struct {
+	Page    int64  `url:"page"`
+	Limit   int64  `url:"limit"`
+	Include int64  `url:"include"`
+	Filter  string `url:"filter"`
+	Order   string `url:"order"`
+}
+
+type pagination struct {
+	CurrentPage  int64  `json:"currentPage"`
+	TotalCount   int64  `json:"totalCount"`
+	NextPage     *int64 `json:"nextPage,omitempty"`
+	PreviousPage *int64 `json:"prevPage,omitempty"`
+	PageCount    *int64 `json:"pageCount,omitempty"`
+}
+
+type filters map[string]string
+type orderBy map[string]int
+
+type listResponse struct {
+	Data       []*content.ContentData `json:"data"`
+	Schema     *content.Schema        `json:"schema"`
+	Pagination *pagination            `json:"pagination,omitempty"`
+	Filter     *filters               `json:"filter,omitempty"`
+	Order      *orderBy               `json:"order,omitempty"`
 }
 
 var (
@@ -630,7 +655,7 @@ func postImage(w http.ResponseWriter, r *http.Request) {
 // @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
 // @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
 // @Param		ref				path	string	true	"git ref (branch, tag, sha)"
-// @Success		200	{object}	[]treeItem
+// @Success		200	{object}	[]entryPayload
 // @Failure		500	{object}	errorData
 // @Router		/cms/{owner}/{repo}/{ref}/settings	[get]
 // @Security	bearerToken
@@ -648,19 +673,16 @@ func getSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	treeItems := make([]*treeItem, 0)
+	items := make([]*entryPayload, 0)
 	for _, rc := range repoContents {
 		if *rc.Type == "file" {
-			treeItems = append(treeItems, &treeItem{
-				Name: rc.Name,
-				// Path: rc.Path,
-				Type: rc.Type,
-				SHA:  rc.SHA,
+			items = append(items, &entryPayload{
+				Name: *rc.Name,
 			})
 		}
 	}
 
-	jsonResponse(w, http.StatusOK, treeItems)
+	jsonResponse(w, http.StatusOK, items)
 }
 
 // @Summary		Get setting
@@ -671,7 +693,7 @@ func getSettings(w http.ResponseWriter, r *http.Request) {
 // @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
 // @Param		ref				path	string	true	"git ref (branch, tag, sha)"
 // @Param		setting			path	string	true	"setting"
-// @Success		200	{object}	map[string]interface{}
+// @Success		200	{object}	entryPayload
 // @Failure		500	{object}	errorData
 // @Router		/cms/{owner}/{repo}/{ref}/settings/{setting}	[get]
 // @Security	bearerToken
@@ -684,26 +706,91 @@ func getSetting(w http.ResponseWriter, r *http.Request) {
 	ref := chi.URLParam(r, "ref")
 	setting := chi.URLParam(r, "setting")
 
-	path := filepath.Join(cms.SettingsFolder, setting)
-	fc, resp, err := gh.GetFileContent(ctx, accessToken, owner, repo, ref, path+".json")
+	name := setting + ".json"
+	path := filepath.Join(cms.SettingsFolder, name)
+	blob, resp, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, path)
 	if err != nil {
-		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
-		return
-	}
-	blob, err := fc.GetContent()
-	if err != nil {
-		errReposGetBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+		e := errReposGetBlob()
+		if resp != nil {
+			e.Status(resp.StatusCode)
+		}
+		e.Log(r, err).Json(w)
 		return
 	}
 
-	contentData := make(map[string]*settingItem)
-	err = json.Unmarshal([]byte(blob), &contentData)
+	jsonResponse(w, http.StatusOK, &entryPayload{
+		Name:     name,
+		Contents: string(blob),
+	})
+}
+
+// @Summary		Create/Update setting
+// @Tags		cms
+// @Accept		json
+// @Param		owner			path	string			true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string			true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string			true	"git ref (branch, tag, sha)"
+// @Param		collection		path	string			true	"collection"
+// @Param		setting			path	string			true	"setting"
+// @Param		payload			body	[]data			true	"setting payload"
+// @Success		200
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}/settings/{setting}	[put]
+// @Security	bearerToken
+func postSetting(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	accessToken := accessTokenFromContext(ctx)
+
+	owner := chi.URLParam(r, "owner")
+	repo := chi.URLParam(r, "repo")
+	ref := chi.URLParam(r, "ref")
+	setting := chi.URLParam(r, "setting")
+
+	b, err := io.ReadAll(r.Body)
 	if err != nil {
-		errCmsParseBlob().Status(http.StatusInternalServerError).Log(r, err).Json(w)
+		errJsonDecode().Log(r, err).Json(w)
 		return
 	}
-	data := &settings{Name: *fc.Name, Content: contentData}
-	jsonResponse(w, http.StatusOK, data)
+
+	path := filepath.Join(cms.SettingsFolder, strings.ToLower(setting)+".json")
+	contents := string(b)
+	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, &contents, commitMessage("settings", "create/update", setting))
+	if err != nil {
+		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// @Summary		Delete setting
+// @Tags		cms
+// @Accept		json
+// @Param		owner			path	string		true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string		true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string		true	"git ref (branch, tag, sha)"
+// @Param		setting			path	string		true	"setting"
+// @Success		200
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}/settings/{setting}	[delete]
+// @Security	bearerToken
+func delSetting(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	accessToken := accessTokenFromContext(ctx)
+
+	owner := chi.URLParam(r, "owner")
+	repo := chi.URLParam(r, "repo")
+	ref := chi.URLParam(r, "ref")
+	setting := chi.URLParam(r, "setting")
+
+	path := filepath.Join(cms.SettingsFolder, setting+".json")
+	resp, err := gh.CommitBlob(ctx, accessToken, owner, repo, ref, path, nil, commitMessage("settings", "delete", setting))
+	if err != nil {
+		errReposCommitBlob().Status(resp.StatusCode).Log(r, err).Json(w)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // @Summary		Get reference
@@ -761,4 +848,119 @@ func getReference(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(w, http.StatusOK, &entryItem{Schema: *cs, Content: &contentData})
+}
+
+// collection groups
+
+// @Summary		Get collection groups
+// @Tags		cms
+// @Accept		json
+// @Produce		json
+// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
+// @Success		200	{object}	map[string]collectionGroup
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}/collectiongroups	[get]
+// @Security	bearerToken
+func getCollectionGroups(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	accessToken := accessTokenFromContext(ctx)
+
+	owner := chi.URLParam(r, "owner")
+	repo := chi.URLParam(r, "repo")
+	ref := chi.URLParam(r, "ref")
+
+	path := filepath.Join(cms.SettingsFolder, "collectiongroups.json")
+	blob, resp, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, path)
+	if err != nil {
+		e := errReposGetBlob()
+		if resp != nil {
+			e.Status(resp.StatusCode)
+		}
+		e.Log(r, err).Json(w)
+		return
+	}
+
+	groups := make(map[string]collectionGroup)
+	err = json.Unmarshal(blob, &groups)
+	if err != nil {
+		errCmsParseBlob().Status(http.StatusInternalServerError).Log(r, err).Json(w)
+		return
+	}
+
+	jsonResponse(w, http.StatusOK, groups)
+}
+
+// @Summary		Get collection group
+// @Tags		cms
+// @Accept		json
+// @Produce		json
+// @Param		owner			path	string	true	"the account owner of the repository (the name is not case sensitive)"
+// @Param		repo			path	string	true	"the name of the repository (the name is not case sensitive)"
+// @Param		ref				path	string	true	"git ref (branch, tag, sha)"
+// @Param		group			path	string	true	"collection group"
+// @Success		200	{object}	[]treeItem
+// @Failure		500	{object}	errorData
+// @Router		/cms/{owner}/{repo}/{ref}/collectiongroups/{group}	[get]
+// @Security	bearerToken
+func getCollectionGroup(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	accessToken := accessTokenFromContext(ctx)
+
+	owner := chi.URLParam(r, "owner")
+	repo := chi.URLParam(r, "repo")
+	ref := chi.URLParam(r, "ref")
+	group := chi.URLParam(r, "group")
+
+	path := filepath.Join(cms.SettingsFolder, "collectiongroups.json")
+	blob, resp, err := gh.GetBlob(ctx, accessToken, owner, repo, ref, path)
+	if err != nil {
+		e := errReposGetBlob()
+		if resp != nil {
+			e.Status(resp.StatusCode)
+		}
+		e.Log(r, err).Json(w)
+		return
+	}
+
+	groups := make(map[string]collectionGroup)
+	err = json.Unmarshal(blob, &groups)
+	if err != nil {
+		errCmsParseBlob().Status(http.StatusInternalServerError).Log(r, err).Json(w)
+		return
+	}
+
+	for n, g := range groups {
+		if n == group {
+			collections := make(map[string]bool)
+			for _, c := range g.Models {
+				collections[c] = true
+			}
+			cmsConfig := getConfig(ctx, accessToken, owner, repo, ref)
+
+			repoContents, resp, err := gh.GetTree(ctx, accessToken, owner, repo, ref, cmsConfig.WorkDir)
+			if err != nil {
+				errReposGetTree().Status(resp.StatusCode).Log(r, err).Json(w)
+				return
+			}
+
+			treeItems := make([]*treeItem, 0)
+			for _, rc := range repoContents {
+				if *rc.Type == "dir" && collections[*rc.Name] {
+					treeItems = append(treeItems, &treeItem{
+						Name: rc.Name,
+						Type: rc.Type,
+						SHA:  rc.SHA,
+					})
+				}
+			}
+
+			jsonResponse(w, http.StatusOK, treeItems)
+			return
+		}
+	}
+
+	b := []byte{}
+	jsonResponse(w, http.StatusOK, b)
 }

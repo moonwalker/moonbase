@@ -64,8 +64,13 @@ func Routes() chi.Router {
 
 			r.Post("/cms/{owner}/{repo}/{ref}/_images", postImage)
 
-			r.Get("/cms/{owner}/{repo}/{ref}/_settings", getSettings)
-			r.Get("/cms/{owner}/{repo}/{ref}/_settings/{setting}", getSetting)
+			r.Get("/cms/{owner}/{repo}/{ref}/settings", getSettings)
+			r.Get("/cms/{owner}/{repo}/{ref}/settings/{setting}", getSetting)
+			r.Post("/cms/{owner}/{repo}/{ref}/settings/{setting}", postSetting)
+			r.Delete("/cms/{owner}/{repo}/{ref}/settings/{setting}", delSetting)
+
+			r.Get("/cms/{owner}/{repo}/{ref}/collectiongroups", getCollectionGroups)
+			r.Get("/cms/{owner}/{repo}/{ref}/collectiongroups/{group}", getCollectionGroup)
 
 			r.Get("/cms/{owner}/{repo}/{ref}/reference/{collection}/{id}/{locale}", getReference)
 
