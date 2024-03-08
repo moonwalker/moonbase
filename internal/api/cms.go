@@ -735,7 +735,7 @@ func getSetting(w http.ResponseWriter, r *http.Request) {
 // @Param		payload			body	[]data			true	"setting payload"
 // @Success		200
 // @Failure		500	{object}	errorData
-// @Router		/cms/{owner}/{repo}/{ref}/settings/{setting}	[put]
+// @Router		/cms/{owner}/{repo}/{ref}/settings/{setting}	[post]
 // @Security	bearerToken
 func postSetting(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
