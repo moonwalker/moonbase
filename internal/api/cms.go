@@ -406,13 +406,19 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		errCmsReadContent().Log(r, err).Json(w)
 		return
 	}
-
+	now := time.Now().UTC()
 	if len(contentData.Name) == 0 {
-		now := time.Now().UTC()
 		contentData.Name = entryData.Name
 		contentData.ID = entryData.Name
 		contentData.CreatedAt = &now
 		contentData.CreatedBy = entryData.Login
+		contentData.Version = 1
+		contentData.Status = "draft"
+	} else {
+		contentData.UpdatedAt = &now
+		contentData.UpdatedBy = entryData.Login
+		contentData.Version = contentData.Version + 1
+		contentData.Status = "changed"
 	}
 
 	locales, statusCode, err := getLocales(ctx, accessToken, owner, repo, ref)
@@ -421,7 +427,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items, err := cms.SeparateLocalisedContent(entryData.Login, contentData, locales, cmsConfig.WorkDir, collection)
+	items, err := cms.SeparateLocalisedContent(contentData, locales, cmsConfig.WorkDir, collection)
 	if err != nil {
 		errCmsSeparateLocalizedContent().Log(r, err).Json(w)
 		return

@@ -63,6 +63,7 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 				result.Type = *c.Type
 				result.ID = dcd.ID
 				result.Version = dcd.Version
+				result.Status = dcd.Status
 
 				if dcd.CreatedAt != "" {
 					ct, _ := time.Parse(time.RFC3339Nano, dcd.CreatedAt)
@@ -74,6 +75,11 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 					result.UpdatedAt = &ut
 				}
 				result.UpdatedBy = dcd.UpdatedBy
+				if dcd.PublishedAt != "" {
+					pt, _ := time.Parse(time.RFC3339Nano, dcd.PublishedAt)
+					result.PublishedAt = &pt
+				}
+				result.PublishedBy = dcd.PublishedBy
 			}
 
 			//for k, v := range dcd.Fields {
@@ -109,9 +115,8 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 	return result, nil
 }
 
-func SeparateLocalisedContent(user string, mcd content.MergedContentData, locales []string, workDir, collection string) ([]gh.BlobEntry, error) {
+func SeparateLocalisedContent(mcd content.MergedContentData, locales []string, workDir, collection string) ([]gh.BlobEntry, error) {
 	var res []gh.BlobEntry
-	now := time.Now().UTC().Format(time.RFC3339Nano)
 
 	for _, l := range locales {
 		fields := make(map[string]interface{})
@@ -127,12 +132,14 @@ func SeparateLocalisedContent(user string, mcd content.MergedContentData, locale
 		}
 
 		s, err := json.Marshal(content.ContentData{
-			ID:        mcd.ID,
-			CreatedAt: mcd.CreatedAt.Format(time.RFC3339Nano),
-			CreatedBy: mcd.CreatedBy,
-			UpdatedAt: now,
-			UpdatedBy: user,
-			Fields:    fields,
+			ID:          mcd.ID,
+			CreatedAt:   mcd.CreatedAt.Format(time.RFC3339Nano),
+			CreatedBy:   mcd.CreatedBy,
+			UpdatedAt:   mcd.UpdatedAt.Format(time.RFC3339Nano),
+			UpdatedBy:   mcd.UpdatedBy,
+			PublishedAt: mcd.PublishedAt.Format(time.RFC3339Nano),
+			PublishedBy: mcd.PublishedBy,
+			Fields:      fields,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling content data:%s", err)
