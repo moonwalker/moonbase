@@ -133,7 +133,7 @@ func getSchema(ctx context.Context, accessToken string, owner string, repo strin
 // @Security	bearerToken
 func getInfo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -172,7 +172,7 @@ func getInfo(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func getCollections(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -213,7 +213,7 @@ func getCollections(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func postCollection(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -255,7 +255,7 @@ func postCollection(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func delCollection(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -297,7 +297,7 @@ func delCollection(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func getEntries(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -362,7 +362,7 @@ func putEntry(w http.ResponseWriter, r *http.Request) {
 
 func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -486,7 +486,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func getEntry(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -555,7 +555,7 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func delEntry(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -589,7 +589,7 @@ func delEntry(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func postImage(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -667,7 +667,7 @@ func postImage(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func getSettings(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -705,7 +705,7 @@ func getSettings(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func getSetting(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -745,7 +745,7 @@ func getSetting(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func postSetting(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -782,7 +782,7 @@ func postSetting(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func delSetting(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -815,7 +815,7 @@ func delSetting(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func getReference(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -871,7 +871,7 @@ func getReference(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func getCollectionGroups(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -912,7 +912,7 @@ func getCollectionGroups(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func getCollectionGroup(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")

@@ -63,7 +63,7 @@ type commitPayload struct {
 // @Security	bearerToken
 func getRepos(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	page, _ := strconv.Atoi(r.FormValue("page"))
 	perPage, _ := strconv.Atoi(r.FormValue("per_page"))
@@ -101,7 +101,7 @@ func getRepos(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func getBranches(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -141,7 +141,7 @@ func getBranches(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func getTree(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -181,7 +181,7 @@ func getTree(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func getBlob(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -216,7 +216,7 @@ func getBlob(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func postBlob(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")
@@ -253,7 +253,7 @@ func postBlob(w http.ResponseWriter, r *http.Request) {
 // @Security	bearerToken
 func delBlob(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	accessToken := accessTokenFromContext(ctx)
+	accessToken := gh.AccessTokenFromContext(ctx)
 
 	owner := chi.URLParam(r, "owner")
 	repo := chi.URLParam(r, "repo")

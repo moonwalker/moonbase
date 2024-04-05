@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -21,15 +20,12 @@ import (
 // test the flow:
 // http://localhost:8080/login/github?return_url=/login/github/authenticate
 
-type ctxKey int
-
 const (
-	retUrlCodePath            = 0
-	retUrlCodeQuery           = 1
-	oauthStateSep             = "|"
-	codeTokenExpires          = time.Minute
-	accessTokenExpires        = time.Hour * 24
-	ctxKeyAccessToken  ctxKey = iota
+	retUrlCodePath     = 0
+	retUrlCodeQuery    = 1
+	oauthStateSep      = "|"
+	codeTokenExpires   = time.Minute
+	accessTokenExpires = time.Hour * 24
 )
 
 var (
@@ -187,42 +183,4 @@ func decryptExchangeCode(code string) (string, error) {
 	}
 
 	return string(token.Claims.(*jwt.AuthClaims).Data), nil
-}
-
-func withUser(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var tokenString string
-
-		// get token from authorization header
-		bearer := r.Header.Get("Authorization")
-		if len(bearer) > 7 && strings.ToUpper(bearer[0:6]) == "BEARER" {
-			tokenString = bearer[7:]
-		}
-		if len(tokenString) == 0 {
-			errAuthNoToken().Json(w)
-			return
-		}
-
-		token, err := jwt.VerifyAndDecrypt(env.JweKey, env.JwtKey, tokenString)
-		if err != nil {
-			errAuthBadToken().Json(w)
-			return
-		}
-
-		authClaims, ok := token.Claims.(*jwt.AuthClaims)
-		if !ok {
-			errAuthBadClaims().Json(w)
-			return
-		}
-
-		// add auth claims to context
-		ctx := context.WithValue(r.Context(), ctxKeyAccessToken, string(authClaims.Data))
-
-		// authenticated, pass it through
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func accessTokenFromContext(ctx context.Context) string {
-	return ctx.Value(ctxKeyAccessToken).(string)
 }

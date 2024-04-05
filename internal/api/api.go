@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/go-chi/chi/v5"
+	gh "github.com/moonwalker/moonbase/pkg/github"
 )
 
 // @title Moonbase
@@ -36,7 +37,7 @@ func Routes() chi.Router {
 
 	// api routes which needs authenticated user token
 	r.Group(func(r chi.Router) {
-		r.Use(withUser)
+		r.Use(gh.WithUser)
 		// low level github apis
 		r.Group(func(r chi.Router) {
 			r.Get("/repos", getRepos)
