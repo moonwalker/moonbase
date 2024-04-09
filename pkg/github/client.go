@@ -264,6 +264,26 @@ func DeleteFolder(ctx context.Context, accessToken string, owner string, repo st
 	return resp, nil
 }
 
+func DeleteFolders(ctx context.Context, accessToken string, owner string, repo string, ref string, paths []string, commitMessage string) (*github.Response, error) {
+	githubClient := ghClient(ctx, accessToken)
+
+	delItems := make([]BlobEntry, 0)
+	for _, path := range paths {
+		resp, items, err := getFolderContentRecursive(ctx, githubClient, owner, repo, ref, path)
+		if err != nil {
+			return resp, err
+		}
+		delItems = append(delItems, items...)
+	}
+
+	var resp *github.Response
+	if len(delItems) > 0 {
+		resp, _ = CommitBlobs(ctx, accessToken, owner, repo, ref, delItems, commitMessage)
+	}
+
+	return resp, nil
+}
+
 func getFolderContentRecursive(ctx context.Context, githubClient *github.Client, owner string, repo string, ref string, path string) (*github.Response, []BlobEntry, error) {
 	_, rc, resp, err := githubClient.Repositories.GetContents(ctx, owner, repo, path, &github.RepositoryContentGetOptions{
 		Ref: ref,
