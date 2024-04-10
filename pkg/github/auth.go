@@ -13,6 +13,7 @@ type ctxKey int
 
 const (
 	ctxKeyAccessToken ctxKey = iota
+	ctxKeyUser        ctxKey = iota
 )
 
 func WithUser(next http.Handler) http.Handler {
@@ -41,9 +42,14 @@ func WithUser(next http.Handler) http.Handler {
 			return
 		}
 
-		// add auth claims to context
-		ctx := context.WithValue(r.Context(), ctxKeyAccessToken, string(authClaims.Data))
+		ghUser, err := GetUser(r.Context(), string(authClaims.Data))
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 
+		// add auth claims to context
+		ctx := context.WithValue(context.WithValue(r.Context(), ctxKeyAccessToken, string(authClaims.Data)), ctxKeyUser, *ghUser.Login)
 		// authenticated, pass it through
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -51,4 +57,8 @@ func WithUser(next http.Handler) http.Handler {
 
 func AccessTokenFromContext(ctx context.Context) string {
 	return ctx.Value(ctxKeyAccessToken).(string)
+}
+
+func UserFromContext(ctx context.Context) string {
+	return ctx.Value(ctxKeyUser).(string)
 }

@@ -407,8 +407,7 @@ func createOrUpdateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	now := time.Now().UTC()
-	if len(contentData.Name) == 0 {
-		contentData.Name = entryData.Name
+	if len(entry) == 0 {
 		contentData.ID = entryData.Name
 		contentData.CreatedAt = &now
 		contentData.CreatedBy = entryData.Login
@@ -537,7 +536,7 @@ func getEntry(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	data := &localizedEntry{Name: mc.Name, Type: mc.Type, Content: mc, Schema: *cs}
+	data := &localizedEntry{Name: mc.ID, Type: "blob", Content: mc, Schema: *cs}
 	jsonResponse(w, http.StatusOK, data)
 }
 

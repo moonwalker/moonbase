@@ -45,7 +45,7 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 	// Get default locale content
 	for _, c := range rc {
 		if *c.Name != content.JsonSchemaName {
-			n, l := GetNameLocaleFromPath(*c.Path)
+			_, l := GetNameLocaleFromPath(*c.Path)
 
 			cnt, err := c.GetContent()
 			if err != nil {
@@ -59,8 +59,6 @@ func MergeLocalisedContent(rc []*github.RepositoryContent, cs content.Schema) (*
 			}
 
 			if l == content.DefaultLocale {
-				result.Name = n
-				result.Type = *c.Type
 				result.ID = dcd.ID
 				result.Version = dcd.Version
 				result.Status = dcd.Status
@@ -147,7 +145,7 @@ func SeparateLocalisedContent(mcd content.MergedContentData, locales []string, w
 
 		content := string(s)
 		res = append(res, gh.BlobEntry{
-			Path:    filepath.Join(workDir, collection, mcd.Name, fmt.Sprintf("%s.json", l)),
+			Path:    filepath.Join(workDir, collection, mcd.ID, fmt.Sprintf("%s.json", l)),
 			Content: &content,
 		})
 	}
