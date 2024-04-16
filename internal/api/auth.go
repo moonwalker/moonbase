@@ -1,46 +1,24 @@
 package api
 
 import (
-	"encoding/base64"
 	"fmt"
 	"net/http"
-	"net/url"
-	"path"
-	"strings"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/xid"
 
-	"github.com/moonwalker/moonbase/internal/env"
-	"github.com/moonwalker/moonbase/internal/jwt"
 	gh "github.com/moonwalker/moonbase/pkg/github"
 )
 
 // test the flow:
 // http://localhost:8080/login/github?return_url=/login/github/authenticate
 
-const (
-	retUrlCodePath     = 0
-	retUrlCodeQuery    = 1
-	oauthStateSep      = "|"
-	codeTokenExpires   = time.Minute
-	accessTokenExpires = time.Hour * 24
-)
-
 var (
 	oauthStateSecret = xid.New().String()
 )
 
-type User struct {
-	Login *string `json:"login"`
-	Email *string `json:"email"`
-	Image *string `json:"image"`
-	Token string  `json:"token"`
-}
-
 func githubAuth(w http.ResponseWriter, r *http.Request) {
-	state, err := encodeState(r)
+	state, err := gh.EncodeState(r, oauthStateSecret)
 	if err != nil {
 		errAuthEncState().Log(r, err).Json(w)
 		return
@@ -51,7 +29,7 @@ func githubAuth(w http.ResponseWriter, r *http.Request) {
 }
 
 func githubCallback(w http.ResponseWriter, r *http.Request) {
-	secret, returnURL := decodeState(r)
+	secret, returnURL := gh.DecodeState(r)
 	if secret != oauthStateSecret {
 		err := fmt.Errorf("expected: %s actual: %s", oauthStateSecret, secret)
 		errAuthBadSecret().Log(r, err).Json(w)
@@ -59,7 +37,7 @@ func githubCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := r.FormValue("code")
-	url, err := returnURLWithCode(returnURL, code, retUrlCodePath)
+	url, err := gh.ReturnURLWithCode(returnURL, code, gh.RetUrlCodePath)
 	if err != nil {
 		errAuthEncRetURL().Log(r, err).Json(w)
 		return
@@ -79,7 +57,7 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	decoded, err := decryptExchangeCode(code)
+	decoded, err := gh.DecryptExchangeCode(code)
 	if err != nil {
 		errAuthDecOAuth().Log(r, err).Json(w)
 		return
@@ -97,13 +75,13 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	et, err := encryptAccessToken(token)
+	et, err := gh.EncryptAccessToken(token)
 	if err != nil {
 		errAuthEncToken().Log(r, err).Json(w)
 		return
 	}
 
-	usr := &User{
+	usr := &gh.User{
 		Login: ghUser.Login,
 		Email: ghUser.Email,
 		Image: ghUser.AvatarURL,
@@ -116,71 +94,4 @@ func authenticateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(w, http.StatusOK, usr)
-}
-
-func encryptAccessToken(accessToken string) (string, error) {
-	te, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, []byte(accessToken), accessTokenExpires)
-	if err != nil {
-		return "", err
-	}
-
-	return te, nil
-}
-
-func encodeState(r *http.Request) (string, error) {
-	returnURL := r.FormValue("return_url")
-
-	u, err := url.Parse(returnURL)
-	if err != nil {
-		return "", err
-	}
-
-	if !u.IsAbs() {
-		u, err = url.Parse(r.Referer())
-		if err != nil {
-			return "", err
-		}
-		u.Path = returnURL
-	}
-
-	state := fmt.Sprintf("%s%s%s", oauthStateSecret, oauthStateSep, u)
-	return base64.URLEncoding.EncodeToString([]byte(state)), nil
-}
-
-func decodeState(r *http.Request) (string, string) {
-	state, _ := base64.URLEncoding.DecodeString(r.FormValue("state"))
-	parts := strings.Split(string(state), oauthStateSep)
-	return parts[0], parts[1]
-}
-
-func returnURLWithCode(returnURL, code string, m int) (string, error) {
-	u, err := url.Parse(returnURL)
-	if err != nil {
-		return "", err
-	}
-
-	codeToken, err := jwt.EncryptAndSign(env.JweKey, env.JwtKey, []byte(code), codeTokenExpires)
-	if err != nil {
-		return "", err
-	}
-
-	switch {
-	case m == retUrlCodeQuery:
-		u.RawQuery = url.Values{
-			"code": {codeToken},
-		}.Encode()
-	case m == retUrlCodePath:
-		u.Path = path.Join(u.Path, codeToken)
-	}
-
-	return u.String(), nil
-}
-
-func decryptExchangeCode(code string) (string, error) {
-	token, err := jwt.VerifyAndDecrypt(env.JweKey, env.JwtKey, code)
-	if err != nil {
-		return "", err
-	}
-
-	return string(token.Claims.(*jwt.AuthClaims).Data), nil
 }
